@@ -1380,7 +1380,7 @@ function hlUnits(word,units){const pre=word.match(/^(il |elle )/)?.[0]||"",c=wor
 const hlLevel=(word,l,wi)=>hlUnits(word,unitsOf(wi??G?.wi??0,l));
 /* l'élève voit seulement le numéro du niveau ; l'admin voit les sons */
 const isAdmin=()=>!!(me()&&me().admin);
-const lvChip=(l,wi)=>isAdmin()?`<span class="lchip">${unitsOf(wi??G?.wi??lastWi??0,l).map(u=>u.lab).join(" · ")}</span>`:`<span class="lnum">${sprout(l)}</span>`;
+const lvChip=(l,wi)=>`<span class="lnum">${sprout(l)}</span>`; /* les sons travaillés ne sont visibles que dans la page Programme */
 let LVL=1;
 const NG=5; /* nombre de jeux par période */
 const SUF=["","","-a","-s","-g","-c","-nv","-adj","-pl","-acc","-det","-an"];
@@ -1388,6 +1388,11 @@ const bkey=(w,kind,l=LVL)=>w.id+SUF[kind]+"@"+l;
 const worldStars=w=>pathOf(WORLDS.indexOf(w)).reduce((s,n)=>s+(best[bkey(w,n.k,n.l)]||0),0);
 const sprout=n=>svg(`<path d="M50 92 V40" fill="none" style="stroke:#6fa83a;stroke-width:6"/>`+[[`M50 62 Q30 60 24 44 Q42 42 50 58Z`],[`M50 50 Q70 46 76 30 Q58 28 50 46Z`],[`M50 40 Q40 22 50 8 Q60 22 50 40Z`]].slice(0,n).map(d=>`<path d="${d}" fill="#8cc152"/>`).join(""));
 const app=document.getElementById("app"),bubble=document.getElementById("bubble"),mascot=document.getElementById("mascot");
+const POMPON_ORIG=document.getElementById("pompon").innerHTML;
+/* le guide : dessin d'origine, ou image choisie par un administrateur du site (il garde ses mouvements) */
+function applyGuide(){const u=(typeof PENDING!=="undefined"&&"@guide" in PENDING)?PENDING["@guide"]:(CUSTOM_LOCAL["@guide"]||CUSTOM["@guide"]);
+  const el=document.getElementById("pompon");el.innerHTML=u?`<image href="${u}" x="0" y="0" width="120" height="170" preserveAspectRatio="xMidYMax meet"/>`:POMPON_ORIG;
+  el.setAttribute("aria-label",(u?"Le guide":"Pompon")+" répète la consigne")}
 const avSvg=a=>svg(ART(a));
 
 /* ---- Sons : voix enregistrées (MP3 intégrés) jouées par Web Audio ---- */
@@ -1507,7 +1512,7 @@ function periodMap(wi){
   const w=WORLDS[wi],P=pathOf(wi),cur=currentNode(wi),ng=gamesOf(wi).length;
   let row=1,html="";
   for(const l of [1,2,3]){const op=levelOpen(wi,l);
-    html+=`<div class="lband${op?"":" lk"}${levelDone(wi,l)?" done":""}" style="grid-row:${row}"><span class="lnum">${op?sprout(l):LOCKI}</span><b>Niveau ${l}</b>${isAdmin()?`<span class="lchip">${unitsOf(wi,l).map(u=>u.lab).join(" · ")}</span>`:""}</div>`;row++;
+    html+=`<div class="lband${op?"":" lk"}${levelDone(wi,l)?" done":""}" style="grid-row:${row}"><span class="lnum">${op?sprout(l):LOCKI}</span><b>Niveau ${l}</b></div>`;row++;
     P.forEach((n,j)=>{if(n.l!==l)return;const q=j-(l-1)*ng,r=Math.floor(q/3),pos=r%2?2-q%3:q%3;
       const lk=!nodeOpen(wi,j),s=best[bkey(w,n.k,n.l)]||0;
       html+=`<div class="nwrap" style="grid-row:${row+r};grid-column:${1+pos*2}/${3+pos*2}"><button class="node${lk?" locked":""}${s?" done":""}${j===cur?" cur":""}" data-j="${j}" aria-label="${GSAY[n.k]}${lk?" (bloqué)":""}">${lk?LOCKI:GICON[n.k]}</button>
@@ -1951,7 +1956,7 @@ function memoScene(kind,w){
       <div class="hand" ${A("m1hand")}>${HAND}</div></div>`}}
   if(kind===2){const l=G.lvl,ex=G.ex||lvlImg(G.wi,l)[0];
     return {title:"Lis et associe",key:"_m2",text:"Lis le mot, trouve son image, puis fais glisser les deux au milieu.",
-     lesson:(isAdmin()?unitsOf(G.wi,l).map(u=>`<span class="snd">${u.lab}</span>`).join(""):"")+`<span>${artOf(ex)}${hlLevel(ex,l,G.wi)}</span>`,
+     lesson:`<span>${artOf(ex)}${hlLevel(ex,l,G.wi)}</span>`,
      html:`<div class="stage"><div class="s" ${A("m2ok","left:30%;top:52%;width:19%")}></div><div class="s" ${A("m2ok","left:51%;top:52%;width:19%")}></div>
       <div class="t" ${A("m2img","box-shadow:inset 0 -8px 0 var(--c)")}>${svg(ART(ex))}</div><div class="t w" ${A("m2word")}>${artOf(ex)}${ex}</div>
       <div class="hand" ${A("m2hand")}>${HAND}</div></div>`}}
@@ -2165,6 +2170,7 @@ function useStudent(st){const cache=LS("pompon-cache-"+st.id)||{};
   const lc=LS("pompon-look-"+st.id)||{},sl=st.look&&Object.keys(st.look).length?st.look:(lc.look||{});
   PROF={list:[{id:st.id,name:st.name,av:st.avatar||st.av,look:sl,best:merged,lvl:st.lvl||cache.lvl||1}],cur:st.id};best=merged;LVL=me().lvl;
   if(st.images){CUSTOM=st.images;LS("pompon-images-cache",CUSTOM)}
+  applyGuide();
   if(Object.keys(cache.best||{}).some(k=>!((st.progress||{})[k]>=cache.best[k]))){PENDING_SAVE=true;pushSave()}}
 function useTeacher(){best=LS("pompon-teacher-best")||{};const tl=LS("pompon-teacher-look")||{};PROF={list:[{id:"admin",name:"Enseignant",av:tl.av||"chouette",look:tl.look||{},best,lvl:1,unlockAll:true,admin:true}],cur:"admin"};LVL=1}
 function usePlayer(){} /* (ancien système local) */
@@ -2541,19 +2547,19 @@ function programScreen(){
 /* ---- Admin : choisir ses propres images ---- */
 let PENDING={};  /* changements pas encore enregistrés : clé -> dataURL, ou null = remettre le dessin */
 function wordsOf(wi){
-  if(wi===5)return WORLDS.map(w=>"@"+w.id);
+  if(wi===5)return ["@guide",...WORLDS.map(w=>"@"+w.id)];
   return [...new Set([...themeWords(wi),...[1,2,3].flatMap(l=>levelWords(wi,l)).filter(k=>isNoun(k)||isVerb(k))].map(baseKey))];
 }
 const shownImg=k=>k in PENDING?PENDING[k]:imgFor(k);
-const tileArt=k=>{const u=shownImg(k),d=u?IMGTAG(u):(k[0]==="@"?WORLD_ICONS[k.slice(1)]:ARTDEF(k));return d?svg(d):`<span class="wonly">?</span>`};
-const tileName=k=>k[0]==="@"?(w=>`Période ${w.p} · ${w.name}`)(WORLDS.find(w=>"@"+w.id===k)):k;
+const tileArt=k=>{if(k==="@guide"){const u=shownImg(k);return u?svg(IMGTAG(u)):`<svg class="ic" viewBox="0 0 120 170">${POMPON_ORIG}</svg>`}const u=shownImg(k),d=u?IMGTAG(u):(k[0]==="@"?WORLD_ICONS[k.slice(1)]:ARTDEF(k));return d?svg(d):`<span class="wonly">?</span>`};
+const tileName=k=>k==="@guide"?"Le guide qui parle (Pompon)":k[0]==="@"?(w=>`Période ${w.p} · ${w.name}`)(WORLDS.find(w=>"@"+w.id===k)):k;
 function imagesScreen(wi){
   document.body.classList.add("home");G=null;
   const n=Object.keys(PENDING).length;
   app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><h1>Images</h1>
     <button class="btn" id="saveimg" style="--c:#4f9f45" ${n?"":"disabled"}>Enregistrer${n?` (${n})`:""}</button></header>
-   <section class="who imgadmin"><p class="imghelp">Touche « Changer » pour mettre ta propre image (photo, dessin…). Les changements s'appliquent à tout le site (toutes les classes) quand tu appuies sur « Enregistrer ».</p>
-    <div class="ptabs">${WORLDS.map((w,i)=>`<button class="ptab" data-w="${i}" aria-pressed="${i===wi}" style="--c:${w.c};--on:${w.on}">${w.p} · ${w.name.replace(/^(La |Le )/,"")}</button>`).join("")}<button class="ptab" data-w="5" aria-pressed="${wi===5}" style="--c:#2b2b2b;--on:#fff">Images des périodes</button></div>
+   <section class="who imgadmin"><p class="imghelp">Touche « Changer » pour mettre ta propre image (photo, dessin…). Pour le guide, une image au fond transparent (PNG) rend le mieux. Les changements s'appliquent à tout le site (toutes les classes) quand tu appuies sur « Enregistrer ».</p>
+    <div class="ptabs">${WORLDS.map((w,i)=>`<button class="ptab" data-w="${i}" aria-pressed="${i===wi}" style="--c:${w.c};--on:${w.on}">${w.p} · ${w.name.replace(/^(La |Le )/,"")}</button>`).join("")}<button class="ptab" data-w="5" aria-pressed="${wi===5}" style="--c:#2b2b2b;--on:#fff">Guide et périodes</button></div>
     <p class="err" id="imgmsg"></p>
     <div class="imggrid">${wordsOf(wi).map(k=>{const custom=!!shownImg(k);return `<div class="imgcard${k in PENDING?" pend":""}"><span class="ipic">${tileArt(k)}</span><b>${esc(tileName(k))}</b>
       <label class="ibtn">Changer<input type="file" accept="image/*" data-k="${esc(k)}" hidden></label>${custom?`<button class="ibtn alt" data-reset="${esc(k)}">Dessin d'origine</button>`:""}</div>`}).join("")}</div></section>`;
@@ -2561,32 +2567,34 @@ function imagesScreen(wi){
   document.getElementById("back").onclick=()=>{if(Object.keys(PENDING).length){document.getElementById("imgmsg").textContent="Tu as des images pas encore enregistrées : appuie sur « Enregistrer » d'abord.";return}periodsScreen()};
   app.querySelectorAll("input[type=file]").forEach(inp=>inp.onchange=async()=>{
     const f=inp.files&&inp.files[0];if(!f)return;
-    try{PENDING[inp.dataset.k]=await shrink(f);imagesScreen(wi)}catch(e){document.getElementById("imgmsg").textContent="Cette image n'a pas pu être lue. Essaie une photo JPG ou PNG."}});
+    try{PENDING[inp.dataset.k]=inp.dataset.k==="@guide"?await shrink(f,360,true):await shrink(f);imagesScreen(wi)}catch(e){document.getElementById("imgmsg").textContent="Cette image n'a pas pu être lue. Essaie une photo JPG ou PNG."}});
   app.querySelectorAll("[data-reset]").forEach(b=>b.onclick=()=>{PENDING[b.dataset.reset]=null;imagesScreen(wi)});
   document.getElementById("saveimg").onclick=()=>saveImages(wi);
 }
 /* Réduit l'image à 240 px pour qu'elle reste légère */
-function shrink(file){return new Promise((res,rej)=>{const r=new FileReader();r.onerror=rej;r.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{
-  const S=240,c=document.createElement("canvas");c.width=S;c.height=S;const x=c.getContext("2d");const sc=Math.min(S/im.width,S/im.height);
-  const w=im.width*sc,h=im.height*sc;x.drawImage(im,(S-w)/2,(S-h)/2,w,h);let d=c.toDataURL("image/webp",0.82);if(!d.startsWith("data:image/webp"))d=c.toDataURL("image/png");res(d)};im.src=r.result};r.readAsDataURL(file)})}
+function shrink(file,S=240,keep=false){return new Promise((res,rej)=>{const r=new FileReader();r.onerror=rej;r.onload=()=>{const im=new Image();im.onerror=rej;im.onload=()=>{
+  const sc=Math.min(S/im.width,S/im.height,keep?1:9),w=Math.round(im.width*sc),h=Math.round(im.height*sc),c=document.createElement("canvas");c.width=keep?w:S;c.height=keep?h:S;const x=c.getContext("2d");
+  x.drawImage(im,(c.width-w)/2,(c.height-h)/2,w,h);let d=c.toDataURL("image/webp",0.82);if(!d.startsWith("data:image/webp"))d=c.toDataURL("image/png");res(d)};im.src=r.result};r.readAsDataURL(file)})}
 async function saveImages(wi){
   const btn=document.getElementById("saveimg"),msg=document.getElementById("imgmsg");btn.disabled=true;btn.textContent="Enregistrement…";
   try{for(const [k,v] of Object.entries(PENDING)){
       if(v)await tq("/rest/v1/site_images?on_conflict=key",{method:"POST",prefer:"resolution=merge-duplicates",body:[{key:k,data:v,updated_at:new Date().toISOString()}]});
       else await tq(`/rest/v1/site_images?key=eq.${encodeURIComponent(k)}`,{method:"DELETE"});
       if(v)CUSTOM[k]=v;else delete CUSTOM[k]}
-    PENDING={};imagesScreen(wi);document.getElementById("imgmsg").innerHTML='<span class="okmsg">Enregistré pour tout le site.</span>';sndGood();
+    PENDING={};applyGuide();imagesScreen(wi);document.getElementById("imgmsg").innerHTML='<span class="okmsg">Enregistré pour tout le site.</span>';sndGood();
   }catch(e){btn.disabled=false;btn.textContent="Enregistrer";msg.textContent=e.status===401||e.status===403?"Seuls les administrateurs du site peuvent changer les images.":"Les images n'ont pas pu être enregistrées ("+e.message+").";}
 }
 /* images du site (les mêmes pour toutes les classes) + droits d'administrateur du site */
 let SITE_ADMIN=false;
 async function loadTeacherImages(){
   try{const r=await sb("/rest/v1/site_images?select=key,data");CUSTOM={};r.forEach(x=>CUSTOM[x.key]=x.data);LS("pompon-images-cache",CUSTOM)}catch(e){}
+  applyGuide();
   try{SITE_ADMIN=!!(await tq("/rest/v1/rpc/is_site_admin",{method:"POST",body:{}}))}catch(e){SITE_ADMIN=false}
   try{await loadClasses()}catch(e){}}
 
 /* démarrage : enseignant connecté, élève connecté, ou choix de la classe */
 async function boot(){
+  try{CUSTOM=LS("pompon-images-cache")||{};applyGuide()}catch(e){}
   if(authFromLink())return;
   if(TEACH&&await tToken()){useTeacher();await loadTeacherImages();welcomeTeacher();return}
   if(STU){try{const st=await rpc("student_state",{p_token:STU.token});if(st){useStudent(st);if(!st.avatar)return firstAvatar();lastWi=null;periodsScreen();say(`Coucou ${me().name} ! Choisis ta période !`,"_pick");return}STU=null;LS("pompon-student",null)}
