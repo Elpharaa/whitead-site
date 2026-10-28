@@ -425,6 +425,7 @@ body.racing #mascot,body:has(.prog,.imgadmin,.tlist,.sdetail,.setg,.cards) #masc
 .bin .tile .wonly{font-size:12px}.mrow .wonly,.stage .wonly{font-size:clamp(12px,2vw,20px)}
 .rpic.dict{background:#c3ea7a}.rpic.dict>.ic{width:70%;height:70%}.rpic.dict .mini{display:none}
 .prog{align-items:stretch;gap:14px}
+.tile.txt.vow span{font-size:clamp(40px,7vw,64px)}
 .sdetail{max-width:1100px;margin-inline:auto;width:100%;box-sizing:border-box;gap:12px}
 .sdtop{display:flex;gap:16px;align-items:center;flex-wrap:wrap;background:#fff;border:3px solid var(--ink);border-radius:20px;padding:12px 16px}.sdinfo{display:flex;flex-direction:column;flex:1;min-width:200px}.sdinfo small{color:#6b6b6b}.sdinfo b{font-size:20px}.sdinfo .ic{width:18px;height:18px;vertical-align:-3px}
 .sdset{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#e8f3fb;border:3px solid var(--ink);border-radius:20px;padding:12px 16px}.sdset div{display:flex;flex-direction:column}.sdset small{color:#4a4a4a}
@@ -1668,15 +1669,17 @@ function confetti(wid){const pool=WORLDS.find(w=>w.id===wid).animals;for(let i=0
 /* ---- Jeu 2 : Lis et associe ---- */
 function startMatch(wi){
   document.body.classList.remove("home");window.scrollTo(0,0);
-  const w=WORLDS[wi],items=shuffle(lvlImg(wi,LVL)).slice(0,NQ(2));
-  G={kind:2,lvl:LVL,w,wi,errors:0,left:items.length,slots:[null,null],busy:false};
+  const w=WORLDS[wi];
+  const VM=vowelMode(wi,LVL),vit=VM?vowelItems(Math.min(NQ(2),5)):null;
+  const items=VM?vit.map(x=>x.v+"|"+x.pic):readPool(wi,LVL,picable).slice(0,Math.max(NQ(2),0)).sort(()=>Math.random()-.5).slice(0,NQ(2));
+  G={kind:2,lvl:LVL,w,wi,errors:0,left:items.length,slots:[null,null],busy:false,vm:VM};
   const imgs=shuffle(items),words=shuffle(items);
   app.innerHTML=`<section class="game" style="--c:${w.c};--on:${w.on}">
    <div class="gtop"><button class="back ico" id="back" aria-label="Retour à la carte">${MAPI}</button><span class="gtitle"><span class="lvltag" aria-label="${LEVELS[G.lvl]}">${lvChip(G.lvl,G.wi)}</span></span><span></span></div>
    <div class="board">
-    <div class="pool imgs">${imgs.map(k=>`<div class="tile img" data-k="${k}" data-t="img" role="button" tabindex="0" aria-label="Image">${svg(ART(k))}</div>`).join("")}</div>
-    <div class="slots"><div class="slotrow"><div class="slot" data-s="0"></div><div class="slot" data-s="1"></div></div><p class="hint">Glisse une image et un mot dans les cases.</p></div>
-    <div class="pool words">${words.map(k=>`<div class="tile txt" data-k="${k}" data-t="txt" role="button" tabindex="0"><span>${artOf(k)}${hlLevel(k,G.lvl,G.wi)}</span></div>`).join("")}</div>
+    <div class="pool imgs">${imgs.map(k=>`<div class="tile img" data-k="${k}" data-t="img" role="button" tabindex="0" aria-label="Image">${svg(ART(VM?k.split("|")[1]:k))}</div>`).join("")}</div>
+    <div class="slots"><div class="slotrow"><div class="slot" data-s="0"></div><div class="slot" data-s="1"></div></div><p class="hint">${VM?"Glisse une image et la voyelle qu'on entend au début du mot.":"Glisse une image et un mot dans les cases."}</p></div>
+    <div class="pool words">${words.map(k=>VM?`<div class="tile txt vow" data-k="${k}" data-t="txt" role="button" tabindex="0"><span>${k.split("|")[0]}</span></div>`:`<div class="tile txt" data-k="${k}" data-t="txt" role="button" tabindex="0"><span>${artOf(k)}${hlLevel(k,G.lvl,G.wi)}</span></div>`).join("")}</div>
    </div></section>`;
   document.getElementById("back").onclick=()=>{stopVoice();G=null;mapScreen()};
   app.querySelectorAll(".pool .tile").forEach(bindTile);
@@ -1711,7 +1714,8 @@ function place(el,idx){
   }else if(S[other(idx)]&&S[other(idx)].dataset.t===t){unslot(other(idx))}
   if(S[idx])unslot(idx);
   S[idx]=el;el.classList.add("used");
-  if(t==="txt")play(el.dataset.k); /* le mot est lu quand on le pose */
+  if(t==="txt"&&!G.vm)play(el.dataset.k); /* le mot est lu quand on le pose */
+  if(t==="img"&&G.vm)play(el.dataset.k.split("|")[1]); /* l'image dit son nom */
   const slot=app.querySelector(`.slot[data-s="${idx}"]`),copy=el.cloneNode(true);copy.classList.remove("used");copy.removeAttribute("tabindex");slot.innerHTML="";slot.appendChild(copy);
   if(S[0]&&S[1])setTimeout(check,250);
 }
@@ -1719,8 +1723,9 @@ function unslot(i){const el=G.slots[i];if(!el)return;el.classList.remove("used")
 function check(){
   if(!G||G.kind!==2)return;const [a,b]=G.slots;if(!a||!b)return;
   G.busy=true;const slots=app.querySelectorAll(".slot");
-  if(a.dataset.k===b.dataset.k&&a.dataset.t!==b.dataset.t){
-    const k=a.dataset.k;slots.forEach(s=>s.classList.add("ok"));sndGood();
+  const same=G.vm?a.dataset.k.split("|")[0]===b.dataset.k.split("|")[0]:a.dataset.k===b.dataset.k;
+  if(same&&a.dataset.t!==b.dataset.t){
+    const k=G.vm?(a.dataset.t==="img"?a:b).dataset.k.split("|")[1]:a.dataset.k;slots.forEach(s=>s.classList.add("ok"));sndGood();
     const c=Math.random()*CHEERS.length|0;
     setTimeout(()=>say(CHEERS[c],"_c"+c,()=>play(k,()=>{if(!G||G.kind!==2)return;
       a.classList.add("gone");b.classList.add("gone");G.slots=[null,null];slots.forEach(s=>{s.innerHTML="";s.classList.remove("ok")});G.busy=false;
@@ -1739,9 +1744,10 @@ function startSort(wi){
   /* un son (ou une écriture) du niveau, choisi parmi ceux qui ont assez d'images avec et sans */
   const absent=(k,u)=>uMode(u)==="son"?!phHas(k,u.ph):!new RegExp(u.re).test(core(k).toLowerCase());
   /* « J'entends » : il faut une image (on dit le mot dans sa tête) ; « Je vois » : le mot est écrit, l'image est un bonus */
-  const usable=(k,u)=>uMode(u)==="son"?picable(k):(hasImg(k)||!isVerb(k));
+  let strict=true;const usable=(k,u)=>uMode(u)==="son"?picable(k):(hasImg(k)||!isVerb(k))&&(!strict||readable(k,wi,LVL));
   const lw=levelWords(wi,LVL),others=u=>[...new Set([...lw,...lvlImg(wi,LVL),...tw])].filter(k=>usable(k,u)&&absent(k,u)&&!u.words.includes(k));
-  const cands=shuffle(unitsOf(wi,LVL)).filter(u=>u.words.filter(k=>usable(k,u)).length>=3&&others(u).length>=3);
+  const okU=u=>u.words.filter(k=>usable(k,u)).length>=3&&others(u).length>=3;
+  let cands=shuffle(unitsOf(wi,LVL)).filter(okU);if(!cands.length){strict=false;cands=shuffle(unitsOf(wi,LVL)).filter(okU)}
   const u=cands[0]||unitsOf(wi,LVL)[0],mode=uMode(u),snd=u.id;
   const oth=others(u),near=shuffle(oth.filter(k=>lw.includes(k))),far=shuffle(oth.filter(k=>!lw.includes(k)));
   const ny=Math.ceil(NQ(3)/2),nn=NQ(3)-ny;const items=shuffle([...shuffle(u.words.filter(k=>usable(k,u))).slice(0,ny).map(k=>({k,oui:true})),...[...near,...far].slice(0,nn).map(k=>({k,oui:false}))]);
@@ -1821,7 +1827,7 @@ function startGender(wi){
   document.body.classList.remove("home");window.scrollTo(0,0);
   /* « le / la » : on enlève les mots qui s'écrivent avec l' (l'éléphant, l'oie…) */
   const w=WORLDS[wi],okN=x=>isNoun(x)&&hasImg(x)&&!elided(x)&&hasA(artOf(x)+x);
-  let ws=shuffle(levelWords(wi,LVL).filter(okN));if(ws.length<6)ws=[...ws,...shuffle(themeWords(wi).filter(x=>okN(x)&&!ws.includes(x)))];
+  let ws=[...shuffle(levelWords(wi,LVL).filter(x=>okN(x)&&readable(x,wi,LVL))),...shuffle(levelWords(wi,LVL).filter(x=>okN(x)&&!readable(x,wi,LVL)))];if(ws.length<6)ws=[...ws,...shuffle(themeWords(wi).filter(x=>okN(x)&&!ws.includes(x)))];
   const list=ws.slice(0,NQ(4)).map(x=>[x,GENDER[x]]);
   G={kind:4,lvl:LVL,w,wi,list,i:0,errors:0,locked:false};
   renderGender(false);
@@ -1878,6 +1884,78 @@ const natBtn=(t,extra="")=>`<button class="nat" data-n="${t}" style="--nc:${NATS
 const toks=s=>s.split(" ").map(x=>{const i=x.lastIndexOf(":");return i>0?{w:x.slice(0,i),t:x.slice(i+1)}:{w:x,t:""}});
 const sentText=s=>toks(s).map(o=>o.w).join(" ").replace(/' /g,"'").replace(/ ([.!?,])/g,"$1");
 const tokHtml=(s,cls="wt")=>toks(s).map((o,i)=>o.t?`<button class="${cls}" data-i="${i}">${esc(o.w)}</button>`:`<span class="punct">${esc(o.w)}</span>`).join("");
+/* ===== Mots lisibles : seulement les lettres et les sons déjà vus =====
+   Chaque écriture a le niveau où on l'apprend (0 = P1 niveau 1 … 14 = P5 niveau 3). */
+const LVIDX=(wi,l)=>wi*3+l-1;
+function needLevel(word){
+  let w=String(word).toLowerCase().replace(/^(il|elle|ils|elles|le|la|les|un|une|des|du|on|nous|vous) /,"").replace(/^l'/,"").replace(/['’\-\s]/g,"");
+  const V="aeiouyéèêëàâîïôûœ",isV=c=>!!c&&V.includes(c),blk=c=>isV(c)||c==="n"||c==="m";
+  let i=0,mx=0;const up=n=>{if(n>mx)mx=n};
+  while(i<w.length){const r=w.slice(i),c=r[0],n1=r[1],end=k=>i+k>=w.length;
+    let g=1,L=0;
+    if(r.startsWith("eau")){g=3;L=8}
+    else if(/^(ain|aim|ein)/.test(r)&&!blk(r[3])){g=3;L=11}
+    else if(r.startsWith("oin")&&!blk(r[3])){g=3;L=8}
+    else if(r.startsWith("ien")&&!blk(r[3])){g=3;L=11}
+    else if(/^(euil|ouil)/.test(r)){g=/^(euill|ouill)/.test(r)?5:4;L=12}
+    else if(/^[aâ]ill/.test(r)||/^eill/.test(r)){g=4;L=12}
+    else if(/^(ail|eil)$/.test(r)){g=3;L=12}
+    else if(r.startsWith("ill")&&i>0){g=3;L=12}
+    else if(/^(ay|oy|uy)/.test(r)&&isV(r[2])){g=2;L=13}
+    else if(/^(œu|œ)/.test(r)){g=r[1]==="u"?2:1;L=14}
+    else if(/^(ou|où|oû)/.test(r)){g=2;L=2}
+    else if(/^(eu|eû)/.test(r)){g=2;L=2}
+    else if(r.startsWith("oi")){g=2;L=8}
+    else if(r.startsWith("au")){g=2;L=8}
+    else if(/^(ai|aî)/.test(r)){g=2;L=9}
+    else if(r.startsWith("ei")){g=2;L=9}
+    else if(/^(an|am|en|em|on|om|in|im)/.test(r)&&!blk(r[2])){g=2;L=7}
+    else if(/^(un|um)/.test(r)&&!blk(r[2])){g=2;L=r[1]==="m"&&end(2)?11:9}
+    else if(/^(yn|ym)/.test(r)&&!blk(r[2])){g=2;L=11}
+    else if(r.startsWith("ch")){g=2;L=3}
+    else if(r.startsWith("ph")){g=2;L=10}
+    else if(r.startsWith("gn")){g=2;L=12}
+    else if(r.startsWith("qu")){g=2;L=6}
+    else if(r.startsWith("gu")&&/[eiyéèê]/.test(r[2]||"")){g=2;L=6}
+    else if(/^(er|ez|et)$/.test(r)&&w.length>3){g=2;L=10}
+    else if(r==="es"&&i>0){g=2;L=0}                       /* les, des, lunes */
+    else if(r==="ent"&&i>1&&!isV(w[i-1])){g=3;L=0}       /* ils chantent : fin muette */
+    else if(c==="e"){const a=r[1],b=r[2];                  /* e qui chante è : e + 2 consonnes, ou e + consonne finale */
+      if(a&&!isV(a)&&a!=="s"&&(end(2)||(b&&!isV(b)&&!(a+b==="ch"||a+b==="ph"||b==="r"||b==="l")))){L=9}else L=0}
+    else if(isV(c)){L=0}
+    else if(c==="l"||c==="r"||c==="f"){L=1}
+    else if(c==="j"){L=2}
+    else if(c==="v"){L=3}
+    else if(c==="p"||c==="t"||c==="b"){L=(c==="t"&&/^ti(on|e$)/.test(r)&&i>0)?11:4;if(c==="t"&&L===11)g=2}
+    else if(c==="d"||c==="m"||c==="n"){L=5}
+    else if(c==="c"){L=/[eiyéèê]/.test(n1||"")?10:6}
+    else if(c==="g"){L=/[eiyéèê]/.test(n1||"")?10:6}
+    else if(c==="ç"){L=10}
+    else if(c==="s"||c==="z"||c==="k"||c==="q"||c==="h"){L=6}
+    else if(c==="x"){L=11}
+    else if(c==="w"){L=14}
+    /* lettre muette en fin de mot (lit, loup, nid, gros) */
+    if(g===1&&end(1)&&"tdspx".includes(c)&&i>0)L=0;
+    if(g===2&&r[0]===r[1]&&!isV(c))L=Math.max(L,0);      /* doubles lettres : même niveau que la lettre */
+    up(L);i+=g}
+  return mx}
+const readable=(w,wi,l)=>needLevel(w)<=LVIDX(wi,l);
+const sentNeed=s=>Math.max(0,...toks(s).filter(o=>o.t).map(o=>needLevel(o.w)));
+/* mots lisibles pour ce niveau : d'abord ceux du niveau, puis ceux déjà vus avant */
+function readPool(wi,l,keep){const L=LVIDX(wi,l),seen=new Set(),out=[];
+  const add=w=>{if(!seen.has(w)&&keep(w)&&needLevel(w)<=L){seen.add(w);out.push(w)}};
+  levelWords(wi,l).forEach(add);
+  for(let p=wi;p>=0;p--)for(let k=(p===wi?l-1:3);k>=1;k--)levelWords(p,k).forEach(add);
+  return out}
+/* P1 niveau 1 : on ne connaît que les voyelles → on associe l'image à la voyelle du début */
+const VOWEL_PICS={a:["âne","abeille","arbre","avion","araignée"],i:["île","igloo"],o:["orange","orque"],"é":["éléphant","écureuil","étoile","épée","écharpe"]};
+const vowelMode=(wi,l)=>wi===0&&l===1;
+function vowelItems(n){const vs=Object.keys(VOWEL_PICS),out=[];const used=new Set();
+  for(let k=0;out.length<n&&k<40;k++){const v=vs[k%vs.length],c=shuffle(VOWEL_PICS[v].filter(x=>(ARTDEF(x)||ARTDEF("l'"+x))&&!used.has(x)))[0];if(c){used.add(c);out.push({v,pic:c})}}
+  return shuffle(out)}
+
+/* les plus faciles à lire d'abord (mélangés entre eux) */
+function easiest(list,f){return shuffle(list).map(x=>[x,f(x)]).sort((a,b)=>a[1]-b[1]).map(x=>x[0])}
 /* pronoms en images */
 function PRONPIC(p){const girl=p.startsWith("elle"),n=p.endsWith("s")?3:1;let h="";
  for(let i=0;i<n;i++){const x=n===1?50:22+i*28,s=n===1?1:.72;
@@ -1905,9 +1983,9 @@ const gSection=(inner)=>`<section class="game gram" style="--c:${G.w.c};--on:${G
 
 /* Période 2 : nom ou verbe ? */
 function startNV(wi){
-  const nouns=shuffle(lvlImg(wi,LVL).filter(x=>isNoun(x)&&hasA(artOf(x)+x)&&!elided(x)));
-  const lv=lvlImg(wi,LVL).filter(x=>isVerb(x)&&hasA(x)),allV=Object.keys(BANK.ALL).filter(x=>isVerb(x)&&/^(il|elle) /.test(x)&&ARTDEF(x)&&hasA(x));
-  const verbs=[...new Set([...shuffle(lv),...shuffle(allV)])];
+  const nouns=shuffle(readPool(wi,LVL,x=>isNoun(x)&&hasImg(x)&&hasA(artOf(x)+x)&&!elided(x)).slice(0,12));
+  const lv=lvlImg(wi,LVL).filter(x=>isVerb(x)&&hasA(x)&&readable(x,wi,LVL)),allV=Object.keys(BANK.ALL).filter(x=>isVerb(x)&&/^(il|elle) /.test(x)&&ARTDEF(x)&&hasA(x)).sort((a,b)=>needLevel(a)-needLevel(b)).filter((x,i,arr)=>readable(x,wi,LVL)||i<6);
+  const verbs=[...new Set([...shuffle(lv),...shuffle(allV.filter(x=>readable(x,wi,LVL))),...allV])];
   const list=shuffle([...nouns.slice(0,Math.ceil(NQ(6)/2)).map(x=>({w:artOf(x)+x,k:x,t:"N",a:artOf(x)+x})),...verbs.slice(0,Math.floor(NQ(6)/2)).map(x=>({w:x,k:x,t:"V",a:x}))]);
   gStart(6,wi,{list});
 }
@@ -1920,7 +1998,7 @@ function rNV(){const it=G.list[G.i];
     if(b.dataset.n===it.t){b.classList.add("good");sndGood();app.querySelector(".bar i").style.width=((G.i+1)/G.n*100)+"%";gNext("_n"+it.t)}else gBad(b)});
 }
 /* Période 3 : touche l'adjectif */
-function startAdj(wi){gStart(7,wi,{list:shuffle(GRAM.ADJ[LVL]).slice(0,NQ(7)).map(([s,img])=>({s,img}))})}
+function startAdj(wi){gStart(7,wi,{list:easiest(GRAM.ADJ[LVL],x=>sentNeed(x[0])).slice(0,NQ(7)).map(([s,img])=>({s,img}))})}
 function rAdj(){const it=G.list[G.i];
   app.innerHTML=gSection(`<div class="qhead"><span class="tag">Grammaire</span><b>Touche l'adjectif</b></div>
    <div class="gword"><div class="pic">${svg(ART(it.img))}</div><div class="nat solo" style="--nc:${NATS.A.c}">${NAT("A")}<span>Adjectif</span></div></div>
@@ -1931,7 +2009,7 @@ function rAdj(){const it=G.list[G.i];
     if(T[+b.dataset.i].t==="A"){b.classList.add("good");b.style.setProperty("--nc",NATS.A.c);sndGood();app.querySelector(".bar i").style.width=((G.i+1)/G.n*100)+"%";gNext(sentText(it.s))}else gBad(b)});
 }
 /* Période 3 : il chante / ils chantent */
-function startPlur(wi){const vs=shuffle(GRAM.PLUR[LVL]),ps=shuffle(["il","elle","ils","elles","il","elle","ils","elles"]);
+function startPlur(wi){const vs=easiest(GRAM.PLUR[LVL],v=>needLevel(conj(v,'il'))),ps=shuffle(["il","elle","ils","elles","il","elle","ils","elles"]);
   gStart(8,wi,{list:Array.from({length:NQ(8)},(_,i)=>({v:vs[i%vs.length],p:ps[i%ps.length]}))})}
 function rPlur(){const it=G.list[G.i],ok=conj(it.v,it.p),opts=shuffle([conj(it.v,"il"),conj(it.v,"ils")]);
   app.innerHTML=gSection(`<div class="qhead"><span class="tag">Grammaire</span><b>Le verbe : ${esc(it.v)}</b></div>
@@ -1941,7 +2019,7 @@ function rPlur(){const it=G.list[G.i],ok=conj(it.v,it.p),opts=shuffle([conj(it.v
     if(b.dataset.o===ok){b.classList.add("good");sndGood();document.getElementById("blank").textContent=ok;document.getElementById("blank").classList.add("ok");app.querySelector(".bar i").style.width=((G.i+1)/G.n*100)+"%";gNext(it.p+" "+ok)}else gBad(b)});
 }
 /* Période 4 : accord sujet - verbe */
-function startAcc(wi){const vs=shuffle(GRAM.ACC[LVL]),ps=shuffle(["il","elle","on","nous","vous","ils","elles","nous"]);
+function startAcc(wi){const vs=easiest(GRAM.ACC[LVL],v=>needLevel(conj(v,'il'))),ps=shuffle(["il","elle","on","nous","vous","ils","elles","nous"]);
   gStart(9,wi,{list:Array.from({length:NQ(9)},(_,i)=>({v:vs[i%vs.length],p:ps[i%ps.length]}))})}
 function rAcc(){const it=G.list[G.i],ok=conj(it.v,it.p);
   const others=shuffle([...new Set(["il","nous","vous","ils"].map(p=>conj(it.v,p)))].filter(x=>x!==ok)).slice(0,2),opts=shuffle([ok,...others]);
@@ -1953,7 +2031,7 @@ function rAcc(){const it=G.list[G.i],ok=conj(it.v,it.p);
 }
 /* Période 4 : les déterminants (choisir / trouver, en alternance) */
 const DFAM=[["le","la","les"],["un","une","des"],["ce","cette","ces"]];
-function startDet(wi){const ns=shuffle(GRAM.DETN[LVL]),ss=shuffle(GRAM.DETS[LVL]),list=[];
+function startDet(wi){const ns=easiest(GRAM.DETN[LVL],x=>needLevel(x[0])),ss=easiest(GRAM.DETS[LVL],sentNeed),list=[];
   for(let i=0;i<NQ(10);i++){if(i%2===0){const [n,g]=ns[i%ns.length],pl=Math.random()<.45,fam=DFAM[Math.random()*3|0];
       const d=pl?fam[2]:g==="m"?fam[0]:fam[1];list.push({n,g,pl,fam,d,w:pl?n+"s":n})}
     else list.push({find:ss[(i>>1)%ss.length]})}
@@ -1979,7 +2057,7 @@ function rDet(){const it=G.list[G.i];
     if(b.dataset.o===it.d){b.classList.add("good");sndGood();document.getElementById("blank").textContent=it.d;document.getElementById("blank").classList.add("ok");app.querySelector(".bar i").style.width=((G.i+1)/G.n*100)+"%";gNext(it.d+" "+it.w)}else gBad(b)});
 }
 /* Période 5 : analyse grammaticale (un personnage pour chaque mot) */
-function startAna(wi){gStart(11,wi,{list:shuffle(GRAM.ANA[LVL]).slice(0,NQ(11)).map(s=>({s,done:{}}))})}
+function startAna(wi){gStart(11,wi,{list:easiest(GRAM.ANA[LVL],sentNeed).slice(0,NQ(11)).map(s=>({s,done:{}}))})}
 function rAna(){const it=G.list[G.i],T=toks(it.s),used=[...new Set(T.filter(o=>o.t).map(o=>o.t))];
   const pal=["D","N","A","V","P","O"];
   app.innerHTML=gSection(`<div class="qhead"><span class="tag">Grammaire</span><b>Un personnage pour chaque mot</b></div>
@@ -2010,7 +2088,7 @@ function memoScene(kind,w){
      html:`<div class="stage"><div class="t" ${A("m1spk","left:8%;top:30%;width:22%;border-radius:50%;background:#c3ea7a;padding:4%")}>${SPEAKER}</div>
       ${an.map((a,i)=>`<div class="t" ${i===1?A("m1good",`left:${40+i*20}%;top:30%;width:17%`):`style="left:${40+i*20}%;top:30%;width:17%"`}>${svg(ART(a))}</div>`).join("")}
       <div class="hand" ${A("m1hand")}>${HAND}</div></div>`}}
-  if(kind===2){const l=G.lvl,ex=G.ex||lvlImg(G.wi,l)[0];
+  if(kind===2){const l=G.lvl,ex=G.ex||(G.vm?"âne":(readPool(G.wi,l,picable)[0]||lvlImg(G.wi,l)[0]));
     return {title:"Lis et associe",key:"_m2",text:"Lis le mot, trouve son image, puis fais glisser les deux au milieu.",
      lesson:`<span>${artOf(ex)}${hlLevel(ex,l,G.wi)}</span>`,
      html:`<div class="stage"><div class="s" ${A("m2ok","left:30%;top:52%;width:19%")}></div><div class="s" ${A("m2ok","left:51%;top:52%;width:19%")}></div>
@@ -2073,30 +2151,32 @@ function addMemoBtn(){
 const oneWord=x=>/^[a-zàâäçéèêëîïôöûùüÿœ]{2,}$/.test(x)&&!isVerb(x)&&hasA(x);
 function raceWords(w,l){
   const wi=WORLDS.indexOf(w),max=9;
-  const pool=levelWords(wi,l).filter(oneWord),short=pool.filter(x=>x.length<=max);
+  const pool=readPool(wi,l,oneWord),short=pool.filter(x=>x.length<=(wi===0?6:max));
   /* d'abord des mots avec image, puis une dictée (haut-parleur) */
-  const im=shuffle(short.filter(hasImg)),di=shuffle(short.filter(x=>!hasImg(x)));
+  const cur=new Set(levelWords(wi,l)),pri=a=>[...shuffle(a.filter(x=>cur.has(x))),...shuffle(a.filter(x=>!cur.has(x)))];
+  const im=pri(short.filter(hasImg)),di=pri(short.filter(x=>!hasImg(x)));
   const N=NQ(5),nd=N>=3?1:0;let out=[...im.slice(0,N-nd),...di.slice(0,nd)];
-  for(const x of shuffle([...im,...di,...pool]))if(out.length<N&&!out.includes(x))out.push(x);
+  for(const x of [...im,...di,...pool])if(out.length<N&&!out.includes(x))out.push(x);
   return shuffle(out);
 }
 function startRace(wi){
   document.body.classList.remove("home");window.scrollTo(0,0);
   const w=WORLDS[wi];
-  G={kind:5,lvl:LVL,w,wi,words:raceWords(w,LVL),i:0,errors:0};
+  const VM=vowelMode(wi,LVL),vit=VM?vowelItems(NQ(5)):null;
+  G={kind:5,lvl:LVL,w,wi,words:VM?vit.map(x=>x.v):raceWords(w,LVL),pics:VM?vit.map(x=>x.pic):null,i:0,errors:0,vm:VM};
   renderRace();addMemoBtn();
-  showMemo(5,w,()=>{say("Relie les lettres pour écrire le mot.",null);if(G&&G.kind===5)play(G.words[G.i])});
+  showMemo(5,w,()=>{say(VM?"Quelle voyelle entends-tu au début du mot ? Va la chercher avec la voiture.":"Relie les lettres pour écrire le mot.",null);if(G&&G.kind===5)play(G.pics?G.pics[G.i]:G.words[G.i])});
 }
 function renderRace(){
-  const {w}=G,word=G.words[G.i],letters=[...word];
-  const nExtra=2,ABC=[...new Set(unitsOf(G.wi,G.lvl).flatMap(u=>(u.show||u.id).replace(/[^a-zàâçéèêëîïôûœ]/g,"").split("")))].join("")||"aeiou",extra=[];
+  const {w}=G,word=G.words[G.i],letters=[...word],pic=G.pics?G.pics[G.i]:word;
+  const nExtra=G.vm?3:2,ABC=G.vm?"aioéu":[...new Set(unitsOf(G.wi,G.lvl).flatMap(u=>(u.show||u.id).replace(/[^a-zàâçéèêëîïôûœ]/g,"").split("")))].join("")||"aeiou",extra=[];
   let guard=0;while(extra.length<nExtra&&guard++<60){const c=ABC[Math.random()*ABC.length|0];if(!word.includes(c)&&!extra.includes(c))extra.push(c)}
   const toks=shuffle([...letters,...extra]);
   app.innerHTML=`<section class="game race" style="--c:${w.c};--on:${w.on}">
    <div class="gtop"><button class="back ico" id="back" aria-label="Retour à la carte">${MAPI}</button><span class="gtitle"><span class="lvltag" aria-label="${LEVELS[G.lvl]}">${lvChip(G.lvl,G.wi)}</span></span>
     <div class="dots">${G.words.map((_,i)=>`<i class="${i<G.i?"ok":i===G.i?"now":""}"></i>`).join("")}</div></div>
-   <div class="rtop"><button class="rpic${hasImg(word)?"":" dict"}" id="hear" aria-label="Écouter le mot">${hasImg(word)?svg(ART(word)):SPEAKER}<span class="mini">${SPEAKER}</span></button>
-    <div class="rboxes" id="boxes">${letters.map((c,i)=>`<span class="rbox">${i===0?`<i class="rghost">${c}</i>`:""}<b></b></span>`).join("")}</div>
+   <div class="rtop"><button class="rpic${hasImg(pic)?"":" dict"}" id="hear" aria-label="Écouter le mot">${hasImg(pic)?svg(ART(pic)):SPEAKER}<span class="mini">${SPEAKER}</span></button>
+    <div class="rboxes" id="boxes">${letters.map((c,i)=>`<span class="rbox">${i===0&&!G.vm?`<i class="rghost">${c}</i>`:""}<b></b></span>`).join("")}</div>
     <button class="back ico" id="undo" aria-label="Effacer la dernière lettre">${UNDO}</button></div>
    <div class="track" id="track"><svg class="road" id="road" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
     <div class="flag" id="flag">${FLAG}</div>${toks.map((c,i)=>`<button class="tok" data-t="${i}">${c}</button>`).join("")}<div class="car" id="car">${CAR}</div></div></section>`;
@@ -2105,16 +2185,16 @@ function renderRace(){
   const cells=[];for(let y=0;y<R;y++)for(let x=0;x<C;x++)if(!(x===0&&y===0)&&!(x===C-1&&y===R-1))cells.push([x,y]);
   const pick=shuffle(cells).slice(0,toks.length);
   const pos=pick.map(([x,y])=>[((x+.5+(Math.random()-.5)*.35)/C)*100,((y+.5+(Math.random()-.5)*.3)/R)*100]);
-  G.R={word,toks,pos,path:[],busy:false,start:[(.5/C)*100,(.5/R)*100],finish:[((C-.5)/C)*100,((R-.5)/R)*100]};
+  G.R={word,pic,toks,pos,path:[],busy:false,start:[(.5/C)*100,(.5/R)*100],finish:[((C-.5)/C)*100,((R-.5)/R)*100]};
   track.querySelectorAll(".tok").forEach((b,i)=>{b.style.left=pos[i][0]+"%";b.style.top=pos[i][1]+"%"});
   const fl=document.getElementById("flag");fl.style.left=G.R.finish[0]+"%";fl.style.top=G.R.finish[1]+"%";
   G.R.arrived=0;G.R.chain=Promise.resolve();setCar(G.R.start,0);drawRoad();
   document.getElementById("back").onclick=()=>{stopVoice();G=null;mapScreen()};
-  document.getElementById("hear").onclick=()=>play(word);
+  document.getElementById("hear").onclick=()=>play(pic);
   document.getElementById("undo").onclick=undoLetter;
   bindTrack(track);addMemoBtn();
   document.body.classList.add("racing"); /* Pompon se cache pour ne pas couvrir les lettres */
-  if(G.i>0&&!hasImg(word))setTimeout(()=>{if(G&&G.kind===5&&G.R&&G.R.word===word)play(word)},400); /* dictée : on entend le mot */
+  if(G.i>0&&!hasImg(pic))setTimeout(()=>{if(G&&G.kind===5&&G.R&&G.R.word===word)play(pic)},400); /* dictée : on entend le mot */
 }
 new MutationObserver(()=>{if(!app.querySelector(".race"))document.body.classList.remove("racing")}).observe(app,{childList:true});
 /* ---- Course des mots : la voiture roule vraiment (animation douce) ---- */
@@ -2200,9 +2280,9 @@ function finishRace(){
       boxes.classList.add("ok");sndGood();fl.classList.add("win");car.classList.add("hop");
       const tr=document.getElementById("track");for(let k=0;k<14;k++){const s=document.createElement("span");s.className="rconf";s.style.left=R.finish[0]+"%";s.style.top=R.finish[1]+"%";
         s.style.setProperty("--dx",(Math.random()*160-80)+"px");s.style.setProperty("--dy",(-60-Math.random()*90)+"px");s.style.background=["#ffd35c","#e8574c","#6fc3e8","#8cc152","#e05a7a"][k%5];tr.appendChild(s);setTimeout(()=>s.remove(),1100)}
-      const myG=G,gi=G.i;let moved=false;const next=()=>{if(moved||G!==myG||G.i!==gi)return;moved=true;G.i++;G.i<G.words.length?(renderRace(),setTimeout(()=>{if(G&&G.kind===5)play(G.words[G.i])},300)):end()};
+      const myG=G,gi=G.i;let moved=false;const next=()=>{if(moved||G!==myG||G.i!==gi)return;moved=true;G.i++;G.i<G.words.length?(renderRace(),setTimeout(()=>{if(G&&G.kind===5)play(G.pics?G.pics[G.i]:G.words[G.i])},300)):end()};
       const c=Math.random()*CHEERS.length|0;
-      setTimeout(()=>say(CHEERS[c],"_c"+c,()=>play(R.word,()=>setTimeout(next,600))),400);setTimeout(next,9000);
+      setTimeout(()=>say(CHEERS[c],"_c"+c,()=>play(R.pic||R.word,()=>setTimeout(next,600))),400);setTimeout(next,9000);
     }else{
       G.errors++;sndBad();boxes.classList.add("no");say("Oups ! Ce n'est pas le bon mot. On recommence.","_r_bad");
       /* marche arrière jusqu'au départ, en dérapant un peu */
