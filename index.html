@@ -414,6 +414,17 @@ body.racing #mascot,body:has(.prog,.imgadmin) #mascot{display:none}
 .pslots.nope{animation:shake .45s}
 .picpad{display:grid;grid-template-columns:repeat(3,minmax(0,110px));gap:12px}
 .pick{aspect-ratio:1;background:#fff;border:4px solid var(--ink);border-radius:22px;box-shadow:0 5px 0 #c4d6a0;padding:14%}.pick:active{transform:translateY(4px);box-shadow:none}
+.auth{max-width:620px;margin-inline:auto;width:100%;box-sizing:border-box}
+.atabs{display:grid;grid-template-columns:1fr 1fr;width:100%;border:4px solid var(--ink);border-radius:18px;overflow:hidden}
+.atab{padding:12px 6px;font:800 18px var(--body);background:#f1eddc;color:#6b6b6b}.atab[aria-selected="true"]{background:#4f9f45;color:#fff}
+.ahelp{text-align:center;margin:0;font-size:17px;line-height:1.4}.ahelp.small{font-size:14px;color:#6b6b6b}
+.abox{border:3px solid var(--ink);border-radius:14px;padding:10px 12px;line-height:1.4}.abox.bad{background:#fde0dc}.abox.warn{background:#fff3c4}.abox.ok{background:#dff3d0}.abox .btn{margin-top:8px}
+.pwrow{display:flex;gap:6px}.pwrow input{flex:1;min-width:0}.pweye{width:52px;border:3px solid var(--ink);border-radius:14px;background:#fff;padding:8px}
+.btn.big1{width:100%;font-size:22px;padding:14px}.linkbtn{background:none;border:0;text-decoration:underline;color:#2f5f9f;font-size:16px;align-self:center}
+.steps{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;font-weight:700;font-size:14px}.steps span{border:3px solid #c9c2a8;border-radius:999px;padding:4px 10px;color:#8f8a76}.steps .done{border-color:#4f9f45;color:#4f9f45}.steps .now{border-color:var(--ink);color:var(--ink);background:#fff3c4}
+.mailbig .ic{width:110px;height:110px}
+.tbanner{background:#dff3d0;border:3px solid var(--ink);border-radius:14px;padding:8px 14px;margin-bottom:10px;text-align:center}
+.tconn{display:flex;align-items:center;gap:8px}.tconn small{color:#6b6b6b}
 .form{display:flex;flex-direction:column;gap:12px;width:min(420px,100%)}.form label{display:flex;flex-direction:column;gap:4px;font-weight:700}
 .form input,.clhead select{font:600 20px var(--body);border:3px solid var(--ink);border-radius:14px;padding:10px 12px}
 .who .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
@@ -2204,24 +2215,91 @@ function whoScreen(){
   if(STU){const t=STU.token;pushSave();rpc("student_logout",{p_token:t}).catch(()=>{});STU=null;LS("pompon-student",null)}
   PROF={list:[],cur:null};best={};rosterScreen();
 }
-/* 4. enseignant : connexion */
-function teacherLogin(){
+/* 4. enseignant : connexion / inscription (deux onglets bien séparés) */
+const HERE=()=>location.origin+location.pathname;
+const EYEBTN=svg(`<path d="M6 50 Q50 10 94 50 Q50 90 6 50Z" fill="#fff"/><circle cx="50" cy="50" r="14" fill="#2b2b2b"/>`);
+function authBox(kind,html){return `<div class="abox ${kind}">${html}</div>`}
+function teacherLogin(mode="in",info=null){
   document.body.classList.add("home");window.scrollTo(0,0);G=null;
-  app.innerHTML=head(true)+`<section class="who"><h2>Espace enseignant</h2>
-    <div class="form"><label>E-mail<input id="tmail" type="email" autocomplete="username"></label>
-    <label>Mot de passe<input id="tpass" type="password" autocomplete="current-password"></label>
-    <span class="err" id="terr"></span>
-    <div class="row"><button class="btn" id="tin" style="--c:#4f9f45">Se connecter</button><button class="btn alt" id="tup">Créer mon compte</button></div></div></section>`;
+  const last=LS("pompon-teacher-email")||"";
+  const tabs=`<div class="atabs" role="tablist"><button class="atab" data-m="in" aria-selected="${mode==="in"}">J'ai déjà un compte</button><button class="atab" data-m="up" aria-selected="${mode==="up"}">Je crée mon compte</button></div>`;
+  const pw=(id,lab,ac)=>`<label>${lab}<span class="pwrow"><input id="${id}" type="password" autocomplete="${ac}"><button type="button" class="pweye" data-for="${id}" aria-label="Afficher le mot de passe">${EYEBTN}</button></span></label>`;
+  const body=mode==="in"
+   ?`<h2>Se connecter</h2><p class="ahelp">Tu as déjà créé ton compte enseignant et confirmé ton e-mail.</p>
+     <div class="form"><label>Ton e-mail<input id="tmail" type="email" autocomplete="username" value="${esc(last)}"></label>${pw("tpass","Ton mot de passe","current-password")}
+     <div id="tmsg"></div><button class="btn big1" id="go" style="--c:#4f9f45">Se connecter</button>
+     <button class="linkbtn" id="forgot">J'ai oublié mon mot de passe</button></div>`
+   :`<h2>Créer mon compte enseignant</h2><p class="ahelp">À faire une seule fois. Tu recevras ensuite un e-mail pour confirmer ton adresse.</p>
+     <div class="form"><label>Ton e-mail<input id="tmail" type="email" autocomplete="username" value="${esc(last)}"></label>${pw("tpass","Choisis un mot de passe (6 caractères minimum)","new-password")}${pw("tpass2","Écris-le une deuxième fois","new-password")}
+     <div id="tmsg"></div><button class="btn big1" id="go" style="--c:#4f9f45">Créer mon compte</button></div>`;
+  app.innerHTML=head(true)+`<section class="who auth">${tabs}${body}</section>`;
+  const msg=(kind,h)=>document.getElementById("tmsg").innerHTML=h?authBox(kind,h):"";
+  if(info)msg(info[0],info[1]);
   document.getElementById("cancel").onclick=()=>CLASS_CODE?rosterScreen():classScreen();
-  const err=m=>document.getElementById("terr").textContent=m,val=()=>[document.getElementById("tmail").value.trim(),document.getElementById("tpass").value];
-  document.getElementById("tin").onclick=async()=>{const [e,p]=val();if(!e||!p)return err("Écris ton e-mail et ton mot de passe.");
-    try{tKeep(await sb("/auth/v1/token?grant_type=password",{method:"POST",body:{email:e,password:p}}));useTeacher();teacherHome()}
-    catch(x){err(/confirm/i.test(x.message)?"Confirme d'abord ton e-mail (regarde ta boîte mail).":x.status===400?"E-mail ou mot de passe incorrect.":"Pas de connexion internet.")}};
-  document.getElementById("tup").onclick=async()=>{const [e,p]=val();if(!e||p.length<6)return err("Écris ton e-mail et un mot de passe de 6 caractères minimum.");
-    try{const j=await sb("/auth/v1/signup",{method:"POST",body:{email:e,password:p}});
-      if(j&&j.access_token){tKeep(j);useTeacher();teacherHome()}else err("Compte créé ! Clique sur le lien reçu par e-mail, puis connecte-toi.")}
-    catch(x){err(/registered|exists/i.test(x.message)?"Ce compte existe déjà : connecte-toi.":x.message)}};
+  app.querySelectorAll(".atab").forEach(b=>b.onclick=()=>teacherLogin(b.dataset.m));
+  say(mode==="in"?"Espace enseignant : connecte-toi.":"Espace enseignant : crée ton compte.",null);
+  app.querySelectorAll(".pweye").forEach(b=>b.onclick=()=>{const i=document.getElementById(b.dataset.for);i.type=i.type==="password"?"text":"password"});
+  const mail=()=>document.getElementById("tmail").value.trim(),pass=()=>document.getElementById("tpass").value;
+  const busy=(on,txt)=>{const g=document.getElementById("go");g.disabled=on;if(txt)g.textContent=txt};
+  if(mode==="in"){
+    const go=async()=>{const e=mail(),p=pass();if(!e||!p)return msg("bad","Écris ton e-mail et ton mot de passe.");
+      busy(true,"Connexion…");LS("pompon-teacher-email",e);
+      try{tKeep(await sb("/auth/v1/token?grant_type=password",{method:"POST",body:{email:e,password:p}}));useTeacher();await loadTeacherImages();welcomeTeacher()}
+      catch(x){busy(false,"Se connecter");
+        if(/confirm/i.test(x.message)){msg("warn",`<b>Ton e-mail n'est pas encore confirmé.</b><br>Ouvre l'e-mail « Confirm your signup » reçu sur <b>${esc(e)}</b> et clique sur le lien. Pense à regarder dans les spams.<br><button class="btn alt" id="resend">Renvoyer l'e-mail</button>`);bindResend(e)}
+        else if(x.status===400)msg("bad","<b>E-mail ou mot de passe incorrect.</b><br>Pas encore de compte ? Touche « Je crée mon compte » en haut.");
+        else msg("bad","Pas de connexion internet. Réessaie dans un instant.")}};
+    document.getElementById("go").onclick=go;document.getElementById("tpass").onkeydown=e=>{if(e.key==="Enter")go()};
+    document.getElementById("forgot").onclick=async()=>{const e=mail();if(!e)return msg("warn","Écris d'abord ton e-mail, puis touche à nouveau « J'ai oublié mon mot de passe ».");
+      try{await sb("/auth/v1/recover?redirect_to="+encodeURIComponent(HERE()),{method:"POST",body:{email:e}});msg("ok",`<b>E-mail envoyé !</b><br>Ouvre l'e-mail reçu sur <b>${esc(e)}</b> et clique sur le lien : tu pourras choisir un nouveau mot de passe.`)}
+      catch(x){msg("bad","L'e-mail n'a pas pu être envoyé. Attends une minute et réessaie.")}};
+  }else{
+    document.getElementById("go").onclick=async()=>{const e=mail(),p=pass(),p2=document.getElementById("tpass2").value;
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e))return msg("bad","Cette adresse e-mail n'a pas l'air correcte.");
+      if(p.length<6)return msg("bad","Le mot de passe doit avoir au moins 6 caractères.");
+      if(p!==p2)return msg("bad","Les deux mots de passe ne sont pas pareils.");
+      busy(true,"Création…");LS("pompon-teacher-email",e);
+      try{const j=await sb("/auth/v1/signup?redirect_to="+encodeURIComponent(HERE()),{method:"POST",body:{email:e,password:p}});
+        if(j&&j.access_token){tKeep(j);useTeacher();welcomeTeacher();return}
+        if(j&&j.identities&&j.identities.length===0){busy(false,"Créer mon compte");return msg("warn","<b>Un compte existe déjà avec cet e-mail.</b><br>Touche « J'ai déjà un compte » en haut pour te connecter.")}
+        checkMailScreen(e)}
+      catch(x){busy(false,"Créer mon compte");msg("bad",/registered|exists/i.test(x.message)?"<b>Un compte existe déjà avec cet e-mail.</b><br>Touche « J'ai déjà un compte » en haut.":/rate|seconds/i.test(x.message)?"Trop d'essais. Attends une minute.":esc(x.message))}};
+  }
 }
+function bindResend(e){const r=document.getElementById("resend");if(!r)return;r.onclick=async()=>{r.disabled=true;
+  try{await sb("/auth/v1/resend?redirect_to="+encodeURIComponent(HERE()),{method:"POST",body:{type:"signup",email:e}});r.textContent="E-mail renvoyé ✓"}catch(x){r.textContent="Attends une minute avant de renvoyer";setTimeout(()=>{r.disabled=false;r.textContent="Renvoyer l'e-mail"},60000)}}}
+/* étape 2 de l'inscription : confirmer l'e-mail */
+function checkMailScreen(e){
+  app.innerHTML=head(false)+`<section class="who auth"><div class="steps"><span class="done">1. Compte créé ✓</span><span class="now">2. Confirmer l'e-mail</span><span>3. Se connecter</span></div>
+   <h2>Regarde ta boîte mail</h2>
+   <div class="mailbig">${svg(`<rect x="8" y="22" width="84" height="58" rx="8" fill="#fff"/><path d="M8 26 L50 58 L92 26" fill="none" style="stroke-width:5"/>`)}</div>
+   <p class="ahelp">Un e-mail a été envoyé à <b>${esc(e)}</b>.<br>Ouvre-le et clique sur <b>« Confirm your mail »</b>.<br>Le site s'ouvrira et tu seras connecté automatiquement.</p>
+   <p class="ahelp small">Rien reçu ? Regarde dans les spams, ou renvoie l'e-mail.</p>
+   <div class="row"><button class="btn alt" id="resend">Renvoyer l'e-mail</button><button class="btn" id="done" style="--c:#4f9f45">J'ai confirmé : me connecter</button></div></section>`;
+  bindResend(e);document.getElementById("done").onclick=()=>teacherLogin("in");
+}
+/* retour depuis le lien de l'e-mail (confirmation ou mot de passe oublié) */
+function authFromLink(){
+  const h=new URLSearchParams(location.hash.slice(1));if(!h.get("access_token")&&!h.get("error"))return false;
+  history.replaceState(null,"",location.pathname+location.search);
+  if(h.get("error")){const exp=/expired|invalid/i.test(h.get("error_description")||"")||h.get("error_code")==="otp_expired";
+    teacherLogin("in",["warn",exp?"<b>Ce lien a expiré ou a déjà servi.</b><br>Si tu as déjà confirmé, connecte-toi simplement ci-dessous.":"Le lien n'a pas fonctionné. Connecte-toi ci-dessous."]);return true}
+  tKeep({access_token:h.get("access_token"),refresh_token:h.get("refresh_token"),expires_at:+h.get("expires_at")||0,expires_in:+h.get("expires_in")||3600});
+  if(!TEACH.expires_at)TEACH.expires_at=Date.now()/1000+3600;
+  if(h.get("type")==="recovery"){newPassScreen();return true}
+  useTeacher();tq("/auth/v1/user").then(u=>{if(u&&u.email){TEACH.email=u.email;LS("pompon-teacher",TEACH);LS("pompon-teacher-email",u.email)}}).catch(()=>{}).then(loadTeacherImages).finally(()=>welcomeTeacher("<b>E-mail confirmé !</b> Ton compte est prêt et tu es connecté."));return true}
+function newPassScreen(){
+  app.innerHTML=head(false)+`<section class="who auth"><h2>Nouveau mot de passe</h2><div class="form">
+   <label>Nouveau mot de passe (6 caractères minimum)<input id="np1" type="password" autocomplete="new-password"></label><label>Écris-le une deuxième fois<input id="np2" type="password" autocomplete="new-password"></label>
+   <div id="tmsg"></div><button class="btn big1" id="go" style="--c:#4f9f45">Enregistrer</button></div></section>`;
+  document.getElementById("go").onclick=async()=>{const a=document.getElementById("np1").value,b=document.getElementById("np2").value,m=h=>document.getElementById("tmsg").innerHTML=authBox("bad",h);
+    if(a.length<6)return m("Au moins 6 caractères.");if(a!==b)return m("Les deux mots de passe ne sont pas pareils.");
+    try{await tq("/auth/v1/user",{method:"PUT",body:{password:a}});useTeacher();await loadTeacherImages();welcomeTeacher("<b>Mot de passe changé !</b> Tu es connecté.")}catch(x){m(esc(x.message))}};
+}
+/* accueil de l'enseignant : on voit clairement qu'on est connecté */
+function welcomeTeacher(note){lastWi=null;periodsScreen();
+  const b=document.createElement("div");b.className="tbanner";b.innerHTML=`${note?note+"<br>":""}Connecté en enseignant : <b>${esc(TEACH&&TEACH.email||LS("pompon-teacher-email")||"")}</b>`;
+  app.prepend(b);say("Bonjour ! Tout est débloqué.","_admin")}
 function teacherOut(){TEACH=null;LS("pompon-teacher",null);PROF={list:[],cur:null};best={};CLASS_CODE?rosterScreen():classScreen()}
 
 /* 5. enseignant : suivi des élèves */
@@ -2237,12 +2315,12 @@ function whereIs(pr){const has=(w,k,l)=>(pr[w.id+SUF[k]+"@"+l]||0)>0;
 const ago=d=>{if(!d)return "jamais venu";const s=(Date.now()-new Date(d))/1000;if(s<120)return "en ce moment";if(s<3600)return `il y a ${Math.round(s/60)} min`;if(s<86400)return `il y a ${Math.round(s/3600)} h`;return `il y a ${Math.round(s/86400)} j`};
 async function teacherHome(){
   if(!(await tToken()))return teacherLogin();
-  useTeacher();lastWi=null;periodsScreen();say("Bonjour ! Tout est débloqué.","_admin");
+  useTeacher();welcomeTeacher();
 }
 async function loadClasses(){TCLASSES=await tq("/rest/v1/classes?select=id,name,code&order=created_at");if(!TCLASSES.find(c=>c.id===TCUR))TCUR=TCLASSES[0]&&TCLASSES[0].id;LS("pompon-tclass",TCUR);return TCLASSES}
 async function studentsScreen(){
   document.body.classList.add("home");window.scrollTo(0,0);G=null;
-  app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><h1>Élèves</h1><button class="adminbtn" id="out">Se déconnecter</button></header><section class="who track"><p class="step">Chargement…</p></section>`;
+  app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><h1>Élèves</h1><span class="tconn"><small>${esc(TEACH&&TEACH.email||"")}</small><button class="adminbtn" id="out">Se déconnecter</button></span></header><section class="who track"><p class="step">Chargement…</p></section>`;
   document.getElementById("back").onclick=()=>periodsScreen();document.getElementById("out").onclick=teacherOut;
   const box=app.querySelector(".track");
   try{await loadClasses()}catch(e){box.innerHTML=`<p class="err">Impossible de charger les classes (${esc(e.message)}).</p>`;return}
@@ -2357,7 +2435,8 @@ async function loadTeacherImages(){try{await loadClasses();if(TCUR){const r=awai
 
 /* démarrage : enseignant connecté, élève connecté, ou choix de la classe */
 async function boot(){
-  if(TEACH&&await tToken()){useTeacher();await loadTeacherImages();lastWi=null;periodsScreen();say("Bonjour ! Tout est débloqué.","_admin");return}
+  if(authFromLink())return;
+  if(TEACH&&await tToken()){useTeacher();await loadTeacherImages();welcomeTeacher();return}
   if(STU){try{const st=await rpc("student_state",{p_token:STU.token});if(st){useStudent(st);lastWi=null;periodsScreen();say(`Coucou ${me().name} ! Choisis ta période !`,"_pick");return}STU=null;LS("pompon-student",null)}
     catch(e){CUSTOM=LS("pompon-images-cache")||{};useStudent({id:STU.id,name:STU.name,avatar:STU.av,progress:{},lvl:1});lastWi=null;periodsScreen();netBadge(true);return}}
   CLASS_CODE?rosterScreen():classScreen();
