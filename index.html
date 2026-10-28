@@ -385,10 +385,21 @@ body.home h1{text-shadow:0 3px 0 #fdfbfc}
 .road{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .tok{position:absolute;width:clamp(56px,9vw,74px);aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;background:#fff;border:4px solid var(--ink);box-shadow:0 5px 0 var(--c);font:700 clamp(28px,5vw,40px) var(--body);color:var(--ink);display:grid;place-items:center;padding:0;z-index:2;touch-action:none;box-sizing:border-box;line-height:1}
 .tok.used{background:#e9e6da;color:#a29c86;box-shadow:none;transform:translate(-50%,-50%) scale(.82)}
-.car{position:absolute;width:clamp(66px,10vw,92px);z-index:3;pointer-events:none;transition:left .35s ease,top .35s ease,transform .25s}
+.car{position:absolute;width:clamp(66px,10vw,92px);z-index:3;pointer-events:none;transform:translate(-50%,-55%) rotate(var(--rot,0deg)) scaleY(var(--flip,1))}
+.car .wh{transform-box:fill-box;transform-origin:center}.car.moving .wh{animation:wspin .35s linear infinite}.car.moving.rev .wh{animation-direction:reverse}
+@keyframes wspin{to{transform:rotate(360deg)}}
+.car.moving .body{animation:cbob .22s ease-in-out infinite alternate}@keyframes cbob{to{transform:translateY(-1.5px)}}
+.car.hop .ic{animation:chop .6s ease 2}@keyframes chop{40%{transform:translateY(-14px) rotate(-6deg)}}
+.puff{position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;border:2px solid #c9c2a8;transform:translate(-50%,-50%);z-index:2;pointer-events:none;animation:puff .7s ease-out forwards}
+@keyframes puff{to{transform:translate(-50%,-90%) scale(1.8);opacity:0}}
+.tok{transition:transform .2s,background .2s}.tok.pop{animation:tpop .35s ease}@keyframes tpop{50%{transform:translate(-50%,-50%) scale(1.25)}}
+.flyl{position:fixed;z-index:70;transform:translate(0,0);margin:-24px 0 0 -18px;width:36px;height:48px;display:grid;place-items:center;font:700 40px var(--body);color:var(--ink);pointer-events:none;transition:transform .5s cubic-bezier(.3,1.4,.5,1),opacity .5s;text-shadow:0 3px 0 #fff}
+.rbox.land{animation:hop .4s}
+.flag.win .ic{animation:fwave .5s ease-in-out 4 alternate;transform-origin:20% 95%}@keyframes fwave{to{transform:rotate(-12deg) scale(1.1)}}
+.rconf{position:absolute;width:10px;height:10px;border-radius:2px;z-index:4;pointer-events:none;animation:rconf 1.1s ease-out forwards}@keyframes rconf{to{transform:translate(var(--dx),var(--dy)) rotate(400deg);opacity:0}}
 .car .ic{display:block}
-.car.back{transition:left .17s linear,top .17s linear}
-.car.spin .ic{animation:skid .9s ease-in-out}
+
+.car.spin .ic{animation:skid .6s ease-in-out 2}
 @keyframes skid{30%{transform:rotate(-20deg)}60%{transform:rotate(14deg)}}
 .flag{position:absolute;width:clamp(60px,9vw,84px);transform:translate(-50%,-62%);z-index:1}
 .flag.ready{animation:bob .5s ease-in-out infinite alternate}
@@ -1500,7 +1511,7 @@ const GICON={
  3:svg(EAR),
  4:svg(`<text x="50" y="44" text-anchor="middle" class="n" font-family="Andika,Trebuchet MS,sans-serif" font-weight="700" font-size="32" fill="#2f8fc4">le</text><text x="50" y="82" text-anchor="middle" class="n" font-family="Andika,Trebuchet MS,sans-serif" font-weight="700" font-size="32" fill="#e0823a">la</text>`)
 };
-const CAR=svg(`<path d="M8 62 Q8 50 20 48 L32 46 Q38 28 58 28 Q74 28 80 46 L88 48 Q95 50 95 60 L95 68 L8 68Z" fill="#e8574c"/><path d="M39 46 Q43 35 55 35 L55 46Z M60 35 Q70 35 73 46 L60 46Z" fill="#d6ecfa"/><circle cx="26" cy="70" r="11" fill="#4a4a4a"/><circle cx="76" cy="70" r="11" fill="#4a4a4a"/><circle cx="26" cy="70" r="4.5" fill="#b8c2cc"/><circle cx="76" cy="70" r="4.5" fill="#b8c2cc"/><circle cx="91" cy="55" r="3.5" fill="#ffd35c"/><path d="M18 56 H30" fill="none" style="stroke:#fff;stroke-width:4"/>`);
+const CAR=svg(`<g class="body"><path d="M8 62 Q8 50 20 48 L32 46 Q38 28 58 28 Q74 28 80 46 L88 48 Q95 50 95 60 L95 68 L8 68Z" fill="#e8574c"/><path d="M39 46 Q43 35 55 35 L55 46Z M60 35 Q70 35 73 46 L60 46Z" fill="#d6ecfa"/><g class="wh"><circle cx="26" cy="70" r="11" fill="#4a4a4a"/><circle cx="26" cy="70" r="4.5" fill="#b8c2cc"/><path d="M26 61 V79 M17 70 H35" fill="none" style="stroke:#8a939c;stroke-width:2"/></g><g class="wh"><circle cx="76" cy="70" r="11" fill="#4a4a4a"/><circle cx="76" cy="70" r="4.5" fill="#b8c2cc"/><path d="M76 61 V79 M67 70 H85" fill="none" style="stroke:#8a939c;stroke-width:2"/></g><circle cx="91" cy="55" r="3.5" fill="#ffd35c"/><path d="M18 56 H30" fill="none" style="stroke:#fff;stroke-width:4"/></g>`);
 const FLAG=svg(`<path d="M24 94 V8" fill="none" style="stroke-width:6"/><path d="M24 10 H84 V52 H24Z" fill="#fff"/>`+[0,1,2,3,4,5].flatMap(i=>[0,1,2].map(j=>(i+j)%2?"":`<rect x="${24+i*10}" y="${10+j*14}" width="10" height="14" fill="#2b2b2b" class="n"/>`)).join("")+`<path d="M24 10 H84 V52 H24Z" fill="none"/>`);
 const UNDO=svg(`<path d="M30 40 H64 Q84 40 84 60 Q84 80 64 80 H40" fill="none" style="stroke-width:9"/><path d="M42 24 L24 40 L42 56" fill="none" style="stroke-width:9"/>`);
 GICON[5]=CAR;GICON[6]=svg(`<text x="50" y="44" text-anchor="middle" class="n" font-family="Andika,Trebuchet MS,sans-serif" font-weight="700" font-size="26" fill="#4a9fe0">nom</text><text x="50" y="82" text-anchor="middle" class="n" font-family="Andika,Trebuchet MS,sans-serif" font-weight="700" font-size="26" fill="#e8574c">verbe</text>`);
@@ -2097,7 +2108,7 @@ function renderRace(){
   G.R={word,toks,pos,path:[],busy:false,start:[(.5/C)*100,(.5/R)*100],finish:[((C-.5)/C)*100,((R-.5)/R)*100]};
   track.querySelectorAll(".tok").forEach((b,i)=>{b.style.left=pos[i][0]+"%";b.style.top=pos[i][1]+"%"});
   const fl=document.getElementById("flag");fl.style.left=G.R.finish[0]+"%";fl.style.top=G.R.finish[1]+"%";
-  moveCar(G.R.start,0);drawRoad();
+  G.R.arrived=0;G.R.chain=Promise.resolve();setCar(G.R.start,0);drawRoad();
   document.getElementById("back").onclick=()=>{stopVoice();G=null;mapScreen()};
   document.getElementById("hear").onclick=()=>play(word);
   document.getElementById("undo").onclick=undoLetter;
@@ -2106,24 +2117,52 @@ function renderRace(){
   if(G.i>0&&!hasImg(word))setTimeout(()=>{if(G&&G.kind===5&&G.R&&G.R.word===word)play(word)},400); /* dictée : on entend le mot */
 }
 new MutationObserver(()=>{if(!app.querySelector(".race"))document.body.classList.remove("racing")}).observe(app,{childList:true});
-function moveCar(p,dirFrom){
-  const car=document.getElementById("car");if(!car)return;
-  let a=0,flip=1;
-  if(dirFrom){const dx=p[0]-dirFrom[0],dy=(p[1]-dirFrom[1])*0.6;a=Math.atan2(dy,dx)*180/Math.PI;if(Math.abs(a)>90)flip=-1}
-  car.style.left=p[0]+"%";car.style.top=p[1]+"%";car.style.transform=`translate(-50%,-55%) rotate(${a}deg) scaleY(${flip})`;
-}
-function pts(extra){const R=G.R;const a=[R.start,...R.path.map(i=>R.pos[i])];if(extra)a.push(extra);return a}
+/* ---- Course des mots : la voiture roule vraiment (animation douce) ---- */
+const RSPEED=42;          /* vitesse en % de piste par seconde */
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+function carAngle(from,to){const dx=to[0]-from[0],dy=(to[1]-from[1])*0.6;return Math.atan2(dy,dx)*180/Math.PI}
+function setCar(p,ang){const car=document.getElementById("car");if(!car)return;const R=G&&G.R;
+  if(R){R.carPos=p;if(ang!=null)R.carAng=ang}const a=R?R.carAng||0:ang||0,flip=Math.abs(a)>90?-1:1;
+  car.style.left=p[0]+"%";car.style.top=p[1]+"%";car.style.setProperty("--rot",a+"deg");car.style.setProperty("--flip",flip)}
+function moveCar(p,dirFrom){setCar(p,dirFrom?carAngle(dirFrom,p):0)}
+/* tourne doucement vers la bonne direction (par le plus court chemin) */
+function turnToward(target,k){const R=G.R;let d=((target-(R.carAng||0)+540)%360)-180;R.carAng=(R.carAng||0)+d*k}
+function puff(p){const tr=document.getElementById("track");if(!tr)return;const s=document.createElement("span");s.className="puff";s.style.left=p[0]+"%";s.style.top=p[1]+"%";tr.appendChild(s);setTimeout(()=>s.remove(),700)}
+/* conduit la voiture jusqu'à p ; la route se dessine derrière elle */
+function driveTo(p,{reverse=false,speed=RSPEED}={}){return new Promise(res=>{
+  const R=G&&G.R,car=document.getElementById("car");if(!R||!car){res();return}
+  const from=R.carPos||R.start,dist=Math.hypot(p[0]-from[0],(p[1]-from[1])*.75),dur=Math.max(350,Math.min(1300,dist/speed*1000));
+  const target=reverse?carAngle(p,from):carAngle(from,p),myG=G,t0=performance.now();let lastPuff=0;
+  car.classList.add("moving");if(reverse)car.classList.add("rev");
+  const step=now=>{if(G!==myG||!document.getElementById("car")){res();return}
+    const t=Math.min(1,(now-t0)/dur),e=ease(t),q=[from[0]+(p[0]-from[0])*e,from[1]+(p[1]-from[1])*e];
+    turnToward(target,t<1?.18:1);setCar(q);R.live=reverse?null:q;drawRoad();
+    if(now-lastPuff>140&&t<.95){lastPuff=now;puff(q)}
+    if(t<1)requestAnimationFrame(step);else{car.classList.remove("moving","rev");R.live=null;res()}};
+  requestAnimationFrame(step)})}
+/* la file d'attente des déplacements : chaque lettre attend que la voiture arrive */
+const queue=fn=>{const R=G.R;R.chain=(R.chain||Promise.resolve()).then(()=>G&&G.R===R?fn():null).catch(()=>{});return R.chain};
+function pts(extra){const R=G.R;const a=[R.start,...R.path.slice(0,R.arrived??R.path.length).map(i=>R.pos[i])];if(R.live)a.push(R.live);if(extra)a.push(extra);return a}
 function drawRoad(rubber){
-  const road=document.getElementById("road");if(!road)return;
-  const p=pts().map(q=>q.join(",")).join(" ");
-  road.innerHTML=`<polyline points="${p}" fill="none" stroke="#6b6b6b" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+  const road=document.getElementById("road");if(!road)return;const R=G.R;
+  const p=pts().map(q=>q.join(",")).join(" "),last=[R.start,...R.path.map(i=>R.pos[i])].at(-1);
+  road.innerHTML=`<polyline points="${p}" fill="none" stroke="#5a5a5a" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+   <polyline points="${p}" fill="none" stroke="#6f6f6f" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
    <polyline points="${p}" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="10 12" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-   ${rubber?`<line x1="${pts().at(-1)[0]}" y1="${pts().at(-1)[1]}" x2="${rubber[0]}" y2="${rubber[1]}" stroke="#2b2b2b" stroke-width="5" stroke-dasharray="2 10" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`:""}`;
+   ${R.done?`<line x1="${pts().at(-1)[0]}" y1="${pts().at(-1)[1]}" x2="${R.finish[0]}" y2="${R.finish[1]}" stroke="#6f6f6f" stroke-width="26" stroke-linecap="round" vector-effect="non-scaling-stroke"/><line x1="${pts().at(-1)[0]}" y1="${pts().at(-1)[1]}" x2="${R.finish[0]}" y2="${R.finish[1]}" stroke="#fff" stroke-width="4" stroke-dasharray="10 12" vector-effect="non-scaling-stroke"/>`:""}
+   ${rubber?`<line x1="${last[0]}" y1="${last[1]}" x2="${rubber[0]}" y2="${rubber[1]}" stroke="#2b2b2b" stroke-width="5" stroke-dasharray="2 10" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`:""}`;
 }
+/* la lettre ramassée s'envole jusqu'à sa case */
+function flyLetter(i,box){return new Promise(res=>{const tok=document.querySelector(`.tok[data-t="${i}"]`);if(!tok||!box){res();return}
+  const a=tok.getBoundingClientRect(),b=box.getBoundingClientRect(),f=document.createElement("span");f.className="flyl";f.textContent=G.R.toks[i];
+  f.style.left=a.left+a.width/2+"px";f.style.top=a.top+a.height/2+"px";document.body.appendChild(f);
+  tok.classList.add("pop");
+  requestAnimationFrame(()=>{f.style.transform=`translate(${b.left+b.width/2-a.left-a.width/2}px,${b.top+b.height/2-a.top-a.height/2}px) scale(.9)`;f.style.opacity=".95"});
+  setTimeout(()=>{f.remove();res()},520)})}
 function bindTrack(track){
   let drag=false;
   const toPct=e=>{const r=track.getBoundingClientRect();return [(e.clientX-r.left)/r.width*100,(e.clientY-r.top)/r.height*100,r]};
-  const hit=e=>{const [x,y,r]=toPct(e),R=G.R,rad=Math.min(r.width,r.height)*0.055;
+  const hit=e=>{const [x,y,r]=toPct(e),R=G.R,rad=Math.min(r.width,r.height)*0.06;
     const d=q=>Math.hypot((q[0]-x)*r.width/100,(q[1]-y)*r.height/100);
     if(d(R.finish)<rad*1.4)return "flag";
     let best=-1,bd=1e9;R.pos.forEach((q,i)=>{if(R.path.includes(i))return;const v=d(q);if(v<rad&&v<bd){bd=v;best=i}});return best};
@@ -2135,41 +2174,45 @@ function bindTrack(track){
 }
 function addLetter(i){
   const R=G.R;if(R.path.length>=R.word.length){say("Bravo ! Maintenant, va jusqu'à l'arrivée !","_r_go");return}
-  const from=pts().at(-1);R.path.push(i);
+  R.path.push(i);const n=R.path.length;if(R.arrived==null)R.arrived=0;
   document.querySelector(`.tok[data-t="${i}"]`).classList.add("used");
-  const box=document.querySelectorAll(".rbox")[R.path.length-1];box.querySelector("b").textContent=R.toks[i];box.classList.add("fill");
-  tone(520+R.path.length*60,0,.12,"triangle",.15);
-  moveCar(R.pos[i],from);drawRoad();
-  if(R.path.length===R.word.length){document.getElementById("flag").classList.add("ready");say("Bravo ! Maintenant, va jusqu'à l'arrivée !","_r_go")}
+  queue(async()=>{await driveTo(R.pos[i]);R.arrived=n;drawRoad();
+    const box=document.querySelectorAll(".rbox")[n-1];tone(520+n*60,0,.12,"triangle",.15);
+    await flyLetter(i,box);if(!G||G.R!==R)return;
+    box.querySelector("b").textContent=R.toks[i];box.classList.add("fill","land");setTimeout(()=>box.classList.remove("land"),400);
+    if(n===R.word.length&&R.path.length===n){document.getElementById("flag").classList.add("ready");say("Bravo ! Maintenant, va jusqu'à l'arrivée !","_r_go")}});
 }
 function undoLetter(){
   const R=G&&G.R;if(!R||R.busy||!R.path.length)return;
-  const i=R.path.pop();document.querySelector(`.tok[data-t="${i}"]`).classList.remove("used");
-  const box=document.querySelectorAll(".rbox")[R.path.length];box.querySelector("b").textContent="";box.classList.remove("fill");
-  document.getElementById("flag").classList.remove("ready");
-  moveCar(pts().at(-1),R.pos[i]);drawRoad();
+  const i=R.path.pop();
+  queue(async()=>{document.querySelector(`.tok[data-t="${i}"]`).classList.remove("used","pop");
+    const box=document.querySelectorAll(".rbox")[R.path.length];box.querySelector("b").textContent="";box.classList.remove("fill");
+    document.getElementById("flag").classList.remove("ready");R.arrived=R.path.length;
+    await driveTo([R.start,...R.path.map(j=>R.pos[j])].at(-1),{reverse:true,speed:RSPEED*1.4})});
 }
 function finishRace(){
   const R=G.R,fl=document.getElementById("flag"),boxes=document.getElementById("boxes"),car=document.getElementById("car");
   if(R.path.length<R.word.length){fl.classList.remove("no");void fl.offsetWidth;fl.classList.add("no");say("Il manque des lettres.","_r_manque");return}
   R.busy=true;const typed=R.path.map(i=>R.toks[i]).join("");
-  if(typed===R.word){
-    moveCar(R.finish,pts().at(-1));drawRoad();
-    const road=document.getElementById("road");road.insertAdjacentHTML("beforeend",`<line x1="${pts().at(-1)[0]}" y1="${pts().at(-1)[1]}" x2="${R.finish[0]}" y2="${R.finish[1]}" stroke="#6b6b6b" stroke-width="30" stroke-linecap="round" vector-effect="non-scaling-stroke"/>`);
-    boxes.classList.add("ok");sndGood();
-    const myG=G,i=G.i;let moved=false;const next=()=>{if(moved||G!==myG||G.i!==i)return;moved=true;G.i++;G.i<G.words.length?(renderRace(),setTimeout(()=>{if(G&&G.kind===5)play(G.words[G.i])},300)):end()};
-    const c=Math.random()*CHEERS.length|0;
-    setTimeout(()=>say(CHEERS[c],"_c"+c,()=>play(R.word,()=>setTimeout(next,500))),500);setTimeout(next,8000);
-  }else{
-    G.errors++;sndBad();boxes.classList.add("no");
-    /* la voiture fait marche arrière jusqu'au départ en dérapant */
-    car.classList.add("back","spin");const back=[...pts()].reverse();let s=0;
-    const step=()=>{s++;if(s<back.length){const p=back[s],q=back[s-1];car.style.left=p[0]+"%";car.style.top=p[1]+"%";setTimeout(step,170)}};step();
-    say("Oups ! Ce n'est pas le bon mot. On recommence.","_r_bad");
-    setTimeout(()=>{if(!G||G.kind!==5)return;R.path=[];R.busy=false;document.querySelectorAll(".tok").forEach(t=>t.classList.remove("used"));
+  queue(async()=>{
+    if(typed===R.word){
+      await driveTo(R.finish);R.done=true;drawRoad();
+      boxes.classList.add("ok");sndGood();fl.classList.add("win");car.classList.add("hop");
+      const tr=document.getElementById("track");for(let k=0;k<14;k++){const s=document.createElement("span");s.className="rconf";s.style.left=R.finish[0]+"%";s.style.top=R.finish[1]+"%";
+        s.style.setProperty("--dx",(Math.random()*160-80)+"px");s.style.setProperty("--dy",(-60-Math.random()*90)+"px");s.style.background=["#ffd35c","#e8574c","#6fc3e8","#8cc152","#e05a7a"][k%5];tr.appendChild(s);setTimeout(()=>s.remove(),1100)}
+      const myG=G,gi=G.i;let moved=false;const next=()=>{if(moved||G!==myG||G.i!==gi)return;moved=true;G.i++;G.i<G.words.length?(renderRace(),setTimeout(()=>{if(G&&G.kind===5)play(G.words[G.i])},300)):end()};
+      const c=Math.random()*CHEERS.length|0;
+      setTimeout(()=>say(CHEERS[c],"_c"+c,()=>play(R.word,()=>setTimeout(next,600))),400);setTimeout(next,9000);
+    }else{
+      G.errors++;sndBad();boxes.classList.add("no");say("Oups ! Ce n'est pas le bon mot. On recommence.","_r_bad");
+      /* marche arrière jusqu'au départ, en dérapant un peu */
+      car.classList.add("spin");const back=[R.start,...R.path.map(j=>R.pos[j])].reverse();
+      for(let s=1;s<back.length;s++){R.arrived=back.length-1-s;await driveTo(back[s],{reverse:true,speed:RSPEED*1.8});drawRoad()}
+      if(!G||G.R!==R)return;
+      R.path=[];R.arrived=0;R.busy=false;document.querySelectorAll(".tok").forEach(t=>t.classList.remove("used","pop"));
       document.querySelectorAll(".rbox").forEach(b=>{b.classList.remove("fill");b.querySelector("b").textContent=""});boxes.classList.remove("no");
-      fl.classList.remove("ready");car.classList.remove("back","spin");moveCar(R.start,0);drawRoad()},1700);
-  }
+      fl.classList.remove("ready");car.classList.remove("spin");setCar(R.start,0);drawRoad();
+    }});
 }
 
 /* ---- Comptes en ligne (Supabase) ----
