@@ -1466,7 +1466,7 @@ function periodsScreen(){
   document.body.classList.add("home");document.body.style.removeProperty("--pc");G=null;window.scrollTo(0,0);
   const p=me(),tot=WORLDS.reduce((s,w)=>s+worldStars(w),0);
   app.innerHTML=`<header class="maphead"><button class="player${p.admin?" adm":""}" id="who" aria-label="Changer de joueur"><span class="av">${avSvg(p.av)}</span><b>${esc(p.name)}</b></button>
-    <h1><span>Pompon</span> au CP</h1>${p.admin?`<button class="adminbtn" id="studs">${svg(`<circle cx="34" cy="36" r="14" fill="#f2c9a0"/><path d="M12 84 Q14 56 34 56 Q54 56 56 84Z" fill="#2f8fc4"/><circle cx="68" cy="40" r="12" fill="#f2c9a0"/><path d="M50 84 Q52 60 68 60 Q86 60 88 84Z" fill="#e05a7a"/>`)}Élèves</button><button class="adminbtn" id="prog">${svg(`<rect x="16" y="10" width="68" height="80" rx="6" fill="#fff"/><path d="M28 30 H72 M28 46 H72 M28 62 H60" fill="none" style="stroke:#2f8fc4;stroke-width:6"/>`)}Programme</button><button class="adminbtn" id="imgs">${svg(`<rect x="8" y="18" width="84" height="64" rx="8" fill="#fff"/><circle cx="32" cy="40" r="9" fill="#ffd35c"/><path d="M14 76 L40 52 L56 66 L70 54 L88 72 V76Z" fill="#8cc152"/>`)}Images</button>`:""}<div class="total" aria-label="${tot} étoiles">${STAR_ON} ${tot}</div></header>
+    <h1><span>Pompon</span> au CP</h1>${p.admin?`<button class="adminbtn" id="studs">${svg(`<circle cx="34" cy="36" r="14" fill="#f2c9a0"/><path d="M12 84 Q14 56 34 56 Q54 56 56 84Z" fill="#2f8fc4"/><circle cx="68" cy="40" r="12" fill="#f2c9a0"/><path d="M50 84 Q52 60 68 60 Q86 60 88 84Z" fill="#e05a7a"/>`)}Élèves</button><button class="adminbtn" id="prog">${svg(`<rect x="16" y="10" width="68" height="80" rx="6" fill="#fff"/><path d="M28 30 H72 M28 46 H72 M28 62 H60" fill="none" style="stroke:#2f8fc4;stroke-width:6"/>`)}Programme</button>${SITE_ADMIN?`<button class="adminbtn" id="imgs">${svg(`<rect x="8" y="18" width="84" height="64" rx="8" fill="#fff"/><circle cx="32" cy="40" r="9" fill="#ffd35c"/><path d="M14 76 L40 52 L56 66 L70 54 L88 72 V76Z" fill="#8cc152"/>`)}Images</button>`:""}`:""}<div class="total" aria-label="${tot} étoiles">${STAR_ON} ${tot}</div></header>
    <div class="periods">${WORLDS.map((w,wi)=>{const open=periodOpen(wi),done=periodDone(wi);
      return `<button class="pcard2${open?"":" locked"}${done?" done":""}" data-w="${wi}" style="--c:${w.c};--on:${w.on}" aria-label="Période ${w.p}${open?"":" (fermée)"}">
        <span class="pnum">${w.p}</span><span class="ppic">${svg(WART(w.id))}</span><span class="pname">Période ${w.p}</span>
@@ -2260,7 +2260,7 @@ function teacherLogin(mode="in",info=null){
       if(p!==p2)return msg("bad","Les deux mots de passe ne sont pas pareils.");
       busy(true,"Création…");LS("pompon-teacher-email",e);
       try{const j=await sb("/auth/v1/signup?redirect_to="+encodeURIComponent(HERE()),{method:"POST",body:{email:e,password:p}});
-        if(j&&j.access_token){tKeep(j);useTeacher();welcomeTeacher();return}
+        if(j&&j.access_token){tKeep(j);useTeacher();await loadTeacherImages();welcomeTeacher();return}
         if(j&&j.identities&&j.identities.length===0){busy(false,"Créer mon compte");return msg("warn","<b>Un compte existe déjà avec cet e-mail.</b><br>Touche « J'ai déjà un compte » en haut pour te connecter.")}
         checkMailScreen(e)}
       catch(x){busy(false,"Créer mon compte");msg("bad",/registered|exists/i.test(x.message)?"<b>Un compte existe déjà avec cet e-mail.</b><br>Touche « J'ai déjà un compte » en haut.":/rate|seconds/i.test(x.message)?"Trop d'essais. Attends une minute.":esc(x.message))}};
@@ -2300,7 +2300,7 @@ function newPassScreen(){
 function welcomeTeacher(note){lastWi=null;periodsScreen();
   const b=document.createElement("div");b.className="tbanner";b.innerHTML=`${note?note+"<br>":""}Connecté en enseignant : <b>${esc(TEACH&&TEACH.email||LS("pompon-teacher-email")||"")}</b>`;
   app.prepend(b);say("Bonjour ! Tout est débloqué.","_admin")}
-function teacherOut(){TEACH=null;LS("pompon-teacher",null);PROF={list:[],cur:null};best={};CLASS_CODE?rosterScreen():classScreen()}
+function teacherOut(){TEACH=null;SITE_ADMIN=false;LS("pompon-teacher",null);PROF={list:[],cur:null};best={};CLASS_CODE?rosterScreen():classScreen()}
 
 /* 5. enseignant : suivi des élèves */
 let TCLASSES=[],TCUR=LS("pompon-tclass");
@@ -2315,7 +2315,7 @@ function whereIs(pr){const has=(w,k,l)=>(pr[w.id+SUF[k]+"@"+l]||0)>0;
 const ago=d=>{if(!d)return "jamais venu";const s=(Date.now()-new Date(d))/1000;if(s<120)return "en ce moment";if(s<3600)return `il y a ${Math.round(s/60)} min`;if(s<86400)return `il y a ${Math.round(s/3600)} h`;return `il y a ${Math.round(s/86400)} j`};
 async function teacherHome(){
   if(!(await tToken()))return teacherLogin();
-  useTeacher();welcomeTeacher();
+  useTeacher();await loadTeacherImages();welcomeTeacher();
 }
 async function loadClasses(){TCLASSES=await tq("/rest/v1/classes?select=id,name,code&order=created_at");if(!TCLASSES.find(c=>c.id===TCUR))TCUR=TCLASSES[0]&&TCLASSES[0].id;LS("pompon-tclass",TCUR);return TCLASSES}
 async function studentsScreen(){
@@ -2403,7 +2403,7 @@ function imagesScreen(wi){
   const n=Object.keys(PENDING).length;
   app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><h1>Images</h1>
     <button class="btn" id="saveimg" style="--c:#4f9f45" ${n?"":"disabled"}>Enregistrer${n?` (${n})`:""}</button></header>
-   <section class="who imgadmin"><p class="imghelp">Touche « Changer » pour mettre ta propre image (photo, dessin…). Les changements s'appliquent à toute la classe quand tu appuies sur « Enregistrer ».</p>
+   <section class="who imgadmin"><p class="imghelp">Touche « Changer » pour mettre ta propre image (photo, dessin…). Les changements s'appliquent à tout le site (toutes les classes) quand tu appuies sur « Enregistrer ».</p>
     <div class="ptabs">${WORLDS.map((w,i)=>`<button class="ptab" data-w="${i}" aria-pressed="${i===wi}" style="--c:${w.c};--on:${w.on}">${w.p} · ${w.name.replace(/^(La |Le )/,"")}</button>`).join("")}<button class="ptab" data-w="5" aria-pressed="${wi===5}" style="--c:#2b2b2b;--on:#fff">Images des périodes</button></div>
     <p class="err" id="imgmsg"></p>
     <div class="imggrid">${wordsOf(wi).map(k=>{const custom=!!shownImg(k);return `<div class="imgcard${k in PENDING?" pend":""}"><span class="ipic">${tileArt(k)}</span><b>${esc(tileName(k))}</b>
@@ -2422,16 +2422,19 @@ function shrink(file){return new Promise((res,rej)=>{const r=new FileReader();r.
   const w=im.width*sc,h=im.height*sc;x.drawImage(im,(S-w)/2,(S-h)/2,w,h);let d=c.toDataURL("image/webp",0.82);if(!d.startsWith("data:image/webp"))d=c.toDataURL("image/png");res(d)};im.src=r.result};r.readAsDataURL(file)})}
 async function saveImages(wi){
   const btn=document.getElementById("saveimg"),msg=document.getElementById("imgmsg");btn.disabled=true;btn.textContent="Enregistrement…";
-  try{if(!TCLASSES.length)await loadClasses();
-    if(!TCLASSES.length){msg.textContent="Crée d'abord ta classe (bouton « Élèves »).";btn.disabled=false;btn.textContent="Enregistrer";return}
-    for(const [k,v] of Object.entries(PENDING)){
-      if(v)await tq("/rest/v1/class_images?on_conflict=class_id,key",{method:"POST",prefer:"resolution=merge-duplicates",body:TCLASSES.map(c=>({class_id:c.id,key:k,data:v}))});
-      else await tq(`/rest/v1/class_images?key=eq.${encodeURIComponent(k)}`,{method:"DELETE"});
+  try{for(const [k,v] of Object.entries(PENDING)){
+      if(v)await tq("/rest/v1/site_images?on_conflict=key",{method:"POST",prefer:"resolution=merge-duplicates",body:[{key:k,data:v,updated_at:new Date().toISOString()}]});
+      else await tq(`/rest/v1/site_images?key=eq.${encodeURIComponent(k)}`,{method:"DELETE"});
       if(v)CUSTOM[k]=v;else delete CUSTOM[k]}
-    PENDING={};imagesScreen(wi);document.getElementById("imgmsg").innerHTML='<span class="okmsg">Enregistré pour toute la classe.</span>';sndGood();
-  }catch(e){btn.disabled=false;btn.textContent="Enregistrer";msg.textContent="Les images n'ont pas pu être enregistrées ("+e.message+").";}
+    PENDING={};imagesScreen(wi);document.getElementById("imgmsg").innerHTML='<span class="okmsg">Enregistré pour tout le site.</span>';sndGood();
+  }catch(e){btn.disabled=false;btn.textContent="Enregistrer";msg.textContent=e.status===401||e.status===403?"Seuls les administrateurs du site peuvent changer les images.":"Les images n'ont pas pu être enregistrées ("+e.message+").";}
 }
-async function loadTeacherImages(){try{await loadClasses();if(TCUR){const r=await tq(`/rest/v1/class_images?select=key,data&class_id=eq.${TCUR}`);CUSTOM={};r.forEach(x=>CUSTOM[x.key]=x.data)}}catch(e){}}
+/* images du site (les mêmes pour toutes les classes) + droits d'administrateur du site */
+let SITE_ADMIN=false;
+async function loadTeacherImages(){
+  try{const r=await sb("/rest/v1/site_images?select=key,data");CUSTOM={};r.forEach(x=>CUSTOM[x.key]=x.data);LS("pompon-images-cache",CUSTOM)}catch(e){}
+  try{SITE_ADMIN=!!(await tq("/rest/v1/rpc/is_site_admin",{method:"POST",body:{}}))}catch(e){SITE_ADMIN=false}
+  try{await loadClasses()}catch(e){}}
 
 /* démarrage : enseignant connecté, élève connecté, ou choix de la classe */
 async function boot(){
