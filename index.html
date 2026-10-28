@@ -392,7 +392,7 @@ body.home h1{text-shadow:0 3px 0 #fdfbfc}
 @keyframes m5car{0%{left:8%;top:72%}18%{left:28%;top:30%}36%{left:47%;top:70%}54%{left:64%;top:30%}72%{left:80%;top:68%}90%,100%{left:92%;top:24%}}
 @keyframes m5l1{0%,17%{opacity:0}19%,100%{opacity:1}}@keyframes m5l2{0%,35%{opacity:0}37%,100%{opacity:1}}@keyframes m5l3{0%,53%{opacity:0}55%,100%{opacity:1}}@keyframes m5l4{0%,71%{opacity:0}73%,100%{opacity:1}}
 @media (max-width:560px){.track{height:58vh}.rpic{width:84px}.rpic .mini{width:36px;height:36px;right:-8px;bottom:-8px}}
-body.racing #mascot,body:has(.prog,.imgadmin) #mascot{display:none}
+body.racing #mascot,body:has(.prog,.imgadmin,.tlist,.sdetail,.setg,.cards) #mascot{display:none}
 .lchip{font-family:var(--body);font-weight:700;font-size:18px;letter-spacing:1px;white-space:nowrap}
 .lvltag .lchip{font-size:16px}
 .tile.txt mark,.gword mark{background:none;color:inherit;text-decoration:underline 4px;text-underline-offset:5px;text-decoration-color:var(--sun)}
@@ -407,6 +407,28 @@ body.racing #mascot,body:has(.prog,.imgadmin) #mascot{display:none}
 .bin .tile .wonly{font-size:12px}.mrow .wonly,.stage .wonly{font-size:clamp(12px,2vw,20px)}
 .rpic.dict{background:#c3ea7a}.rpic.dict>.ic{width:70%;height:70%}.rpic.dict .mini{display:none}
 .prog{align-items:stretch;gap:14px}
+.sdetail{max-width:1100px;margin-inline:auto;width:100%;box-sizing:border-box;gap:12px}
+.sdtop{display:flex;gap:16px;align-items:center;flex-wrap:wrap;background:#fff;border:3px solid var(--ink);border-radius:20px;padding:12px 16px}.sdinfo{display:flex;flex-direction:column;flex:1;min-width:200px}.sdinfo small{color:#6b6b6b}.sdinfo b{font-size:20px}.sdinfo .ic{width:18px;height:18px;vertical-align:-3px}
+.sdset{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:#e8f3fb;border:3px solid var(--ink);border-radius:20px;padding:12px 16px}.sdset div{display:flex;flex-direction:column}.sdset small{color:#4a4a4a}
+.sdh{margin:6px 0 0;font-family:var(--display)}.tscroll{overflow-x:auto}.stab .hid{opacity:.45}
+.tlist{max-width:1100px;margin-inline:auto;width:100%;box-sizing:border-box;gap:14px}
+.clcard{display:grid;grid-template-columns:1fr auto;grid-template-areas:"name code" "acts code";gap:12px;background:#fff;border:3px solid var(--ink);border-radius:20px;padding:14px 16px;align-items:center}
+.clname{grid-area:name;display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}.clname h2{margin:0;font-size:30px}.clname select{font:800 22px var(--display);border:3px solid var(--ink);border-radius:12px;padding:4px 8px}
+.clcode{grid-area:code;display:flex;flex-direction:column;align-items:center;gap:2px;background:#fff8dc;border:3px dashed var(--ink);border-radius:16px;padding:8px 16px;text-align:center}.clcode b{font:800 34px var(--display);letter-spacing:.15em}.clcode small{font-size:12px;color:#6b6b6b}
+.clacts{grid-area:acts;display:flex;gap:10px;flex-wrap:wrap}.clacts .btn{font-size:17px;padding:10px 16px}
+.stbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.chip{background:#fff;border:2px solid var(--ink);border-radius:999px;padding:4px 12px;font-size:15px;display:inline-flex;align-items:center;gap:4px}.chip .ic{width:16px;height:16px}
+.sortl{margin-left:auto;font-weight:700;display:flex;gap:6px;align-items:center}.sortl select{font:600 15px var(--body);border:2px solid var(--ink);border-radius:10px;padding:4px 6px}
+.scards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.scard{display:flex;flex-direction:column;gap:10px;text-align:left;background:#fff;border:3px solid var(--ink);border-radius:20px;padding:12px;box-shadow:0 5px 0 #c4d6a0;font:inherit}.scard:active{transform:translateY(3px);box-shadow:0 2px 0 #c4d6a0}
+.sctop{display:flex;align-items:center;gap:10px}.sctop .av{width:54px;height:54px;flex:none}.scn{display:flex;flex-direction:column;flex:1;min-width:0}.scn b{font-size:20px;overflow:hidden;text-overflow:ellipsis}
+.seen{color:#8f8a76;font-size:13px}.seen::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:#c9c2a8;margin-right:5px}.seen.on::before{background:#4f9f45}.seen.day::before{background:#ffd35c}
+.sctop .ss{font-weight:800;display:flex;align-items:center;gap:3px}.sctop .ss .ic{width:18px;height:18px}
+.scnow{border-left:6px solid var(--c);background:color-mix(in srgb,var(--c) 10%,#fff);border-radius:10px;padding:6px 10px;display:flex;flex-direction:column}.scnow small{color:#6b6b6b;font-size:12px}.scnow b{font-size:16px}.scnow span{font-size:14px}
+.scper{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}.pb{position:relative;height:18px;border:2px solid var(--ink);border-radius:7px;background:#fff;overflow:hidden}.pb i{position:absolute;inset:0 auto 0 0;background:var(--c)}.pb em{position:relative;font:700 11px var(--body);display:block;text-align:center;line-height:14px;font-style:normal}
+.sctags{display:flex;gap:6px;flex-wrap:wrap}.sctags:empty{display:none}.tag2{font-size:12px;font-weight:700;background:#f1eddc;border-radius:999px;padding:2px 10px}.tag2.blue{background:#d6ecfa}
+.tstart{display:flex;flex-direction:column;align-items:center;gap:12px}.tsteps{font-size:18px;line-height:1.6;background:#fff;border:3px solid var(--ink);border-radius:18px;padding:12px 16px 12px 36px;margin:0}
+.empty{background:#fff;border:3px dashed var(--ink);border-radius:18px;padding:18px;text-align:center;font-size:17px}.empty p{margin:4px 0}
+@media (max-width:640px){.clcard{grid-template-columns:1fr;grid-template-areas:"name" "code" "acts"}.sortl{margin-left:0}}
 .setg{max-width:820px;margin-inline:auto;width:100%;box-sizing:border-box;align-items:stretch}.setg h2{display:flex;align-items:center;gap:10px;justify-content:center}.setg h2 .sav{width:48px;height:48px}
 .sgrp{background:#fff;border:3px solid var(--ink);border-radius:18px;padding:10px 14px;display:flex;flex-direction:column;gap:6px}.sgrp h3{margin:0 0 4px;font-family:var(--display);display:flex;align-items:center;gap:10px}
 .same{font:600 13px var(--body);color:#6b6b6b;background:#f1eddc;border-radius:999px;padding:2px 10px}
@@ -452,7 +474,7 @@ body.racing #mascot,body:has(.prog,.imgadmin) #mascot{display:none}
 .form{display:flex;flex-direction:column;gap:12px;width:min(420px,100%)}.form label{display:flex;flex-direction:column;gap:4px;font-weight:700}
 .form input,.clhead select{font:600 20px var(--body);border:3px solid var(--ink);border-radius:14px;padding:10px 12px}
 .who .row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
-.track,.sdetail{align-items:stretch}
+.tlist,.sdetail{align-items:stretch}
 .clhead{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}.clhead h2{margin:0}.ccode b{font:800 26px var(--display);letter-spacing:.12em;background:#fff;border:3px solid var(--ink);border-radius:12px;padding:2px 10px}
 .sttable{display:flex;flex-direction:column;gap:8px}
 .strow{display:grid;grid-template-columns:52px minmax(80px,1fr) minmax(140px,2fr) 150px 70px 100px;gap:10px;align-items:center;text-align:left;background:#fff;border:3px solid var(--ink);border-radius:18px;padding:6px 12px}
@@ -2363,29 +2385,45 @@ async function teacherHome(){
   useTeacher();await loadTeacherImages();welcomeTeacher();
 }
 async function loadClasses(){TCLASSES=await tq("/rest/v1/classes?select=id,name,code,settings&order=created_at");if(!TCLASSES.find(c=>c.id===TCUR))TCUR=TCLASSES[0]&&TCLASSES[0].id;LS("pompon-tclass",TCUR);return TCLASSES}
-async function studentsScreen(){
-  document.body.classList.add("home");window.scrollTo(0,0);G=null;
-  app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><h1>Élèves</h1><span class="tconn"><small>${esc(TEACH&&TEACH.email||"")}</small><button class="adminbtn" id="out">Se déconnecter</button></span></header><section class="who track"><p class="step">Chargement…</p></section>`;
+async function studentsScreen(sort){
+  document.body.classList.add("home");window.scrollTo(0,0);G=null;sort=sort||LS("pompon-tsort")||"name";
+  app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour au jeu">${MAPI}</button><h1>Mes élèves</h1><span class="tconn"><small>${esc(TEACH&&TEACH.email||"")}</small><button class="adminbtn" id="out">Se déconnecter</button></span></header><section class="who tlist"><p class="step">Chargement…</p></section>`;
   document.getElementById("back").onclick=()=>periodsScreen();document.getElementById("out").onclick=teacherOut;
-  const box=app.querySelector(".track");
+  const box=app.querySelector(".tlist");
   try{await loadClasses()}catch(e){box.innerHTML=`<p class="err">Impossible de charger les classes (${esc(e.message)}).</p>`;return}
-  if(!TCLASSES.length){box.innerHTML=`<h2>Crée ta classe</h2><div class="form"><label>Nom de la classe<input id="cn" value="CP"></label><button class="btn" id="mk" style="--c:#4f9f45">Créer la classe</button><span class="err" id="ce"></span></div>`;
+  if(!TCLASSES.length){box.innerHTML=`<div class="tstart"><h2>Bienvenue !</h2><ol class="tsteps"><li><b>Crée ta classe</b> ci-dessous.</li><li><b>Ajoute tes élèves</b> (juste leur prénom).</li><li><b>Imprime les cartes de connexion</b> et donne-les aux enfants.</li><li>Sur chaque tablette, <b>tape le code de la classe</b> une seule fois.</li></ol>
+     <div class="form"><label>Nom de la classe<input id="cn" value="CP"></label><button class="btn big1" id="mk" style="--c:#4f9f45">Créer ma classe</button><span class="err" id="ce"></span></div></div>`;
     document.getElementById("mk").onclick=async()=>{try{const code=await tq("/rest/v1/rpc/new_class_code",{method:"POST",body:{}});
       await tq("/rest/v1/classes",{method:"POST",body:{name:document.getElementById("cn").value.trim()||"CP",code}});studentsScreen()}catch(e){document.getElementById("ce").textContent=e.message}};return}
   const cl=TCLASSES.find(c=>c.id===TCUR);let st=[];
   try{st=await tq(`/rest/v1/students?select=id,name,avatar,progress,lvl,last_seen,pic_code,look,settings&class_id=eq.${cl.id}&order=name`)}catch(e){box.innerHTML=`<p class="err">${esc(e.message)}</p>`;return}
   const rows=st.map(s=>({...s,w:whereIs(s.progress||{},mergeSet(cl.settings,s.settings).hide)}));
-  box.innerHTML=`<div class="clhead">${TCLASSES.length>1?`<select id="csel">${TCLASSES.map(c=>`<option value="${c.id}"${c.id===cl.id?" selected":""}>${esc(c.name)}</option>`).join("")}</select>`:`<h2>${esc(cl.name)}</h2>`}
-     <span class="ccode">Code de la classe : <b>${esc(cl.code)}</b></span><button class="btn alt" id="cset">Réglages de la classe</button><button class="btn alt" id="cards">Cartes de connexion</button><button class="btn" id="add" style="--c:#4f9f45">+ Ajouter un élève</button></div>
-    ${rows.length?`<div class="sttable">${rows.map(s=>`<button class="strow" data-id="${s.id}"><span class="av">${avFull(s.avatar,s.look)}</span><b class="sn">${esc(s.name)}</b>
-      <span class="sw">${esc(s.w.txt)}</span><span class="sbars">${s.w.per.map((p,i)=>`<span class="sbar" style="--c:${WORLDS[i].c}" title="Période ${i+1}"><i style="width:${p.done/p.total*100}%"></i></span>`).join("")}</span>
-      <span class="ss">${STAR_ON} ${s.w.stars}</span><small class="sl">${ago(s.last_seen)}</small></button>`).join("")}</div>`:`<p class="imghelp">Pas encore d'élèves : touche « Ajouter un élève ».</p>`}
-    <p class="imghelp">Les barres montrent l'avancée dans chaque période (couleur de la période). Touche un élève pour voir le détail.</p>`;
+  const prog=s=>s.w.per.reduce((a,p)=>a+p.done,0);
+  if(sort==="prog")rows.sort((a,b)=>prog(b)-prog(a));else if(sort==="seen")rows.sort((a,b)=>new Date(b.last_seen||0)-new Date(a.last_seen||0));
+  const today=rows.filter(s=>s.last_seen&&new Date(s.last_seen).toDateString()===new Date().toDateString()).length;
+  const avg=rows.length?Math.round(rows.reduce((a,s)=>a+s.w.stars,0)/rows.length):0;
+  const fresh=d=>d&&(Date.now()-new Date(d))<15*60e3?"on":d&&new Date(d).toDateString()===new Date().toDateString()?"day":"";
+  box.innerHTML=`<div class="clcard">
+      <div class="clname">${TCLASSES.length>1?`<select id="csel" aria-label="Classe">${TCLASSES.map(c=>`<option value="${c.id}"${c.id===cl.id?" selected":""}>${esc(c.name)}</option>`).join("")}</select>`:`<h2>${esc(cl.name)}</h2>`}<button class="linkbtn" id="newcl">+ Nouvelle classe</button></div>
+      <div class="clcode"><small>Code de la classe</small><b>${esc(cl.code)}</b><small>À taper une fois sur chaque tablette</small></div>
+      <div class="clacts"><button class="btn" id="add" style="--c:#4f9f45">+ Ajouter un élève</button><button class="btn alt" id="cset">⚙ Réglages de la classe</button><button class="btn alt" id="cards">🖨 Cartes de connexion</button></div></div>
+    ${rows.length?`<div class="stbar"><span class="chip"><b>${rows.length}</b> élève${rows.length>1?"s":""}</span><span class="chip"><b>${today}</b> venu${today>1?"s":""} aujourd'hui</span><span class="chip">${STAR_ON} <b>${avg}</b> étoiles en moyenne</span>
+      <label class="sortl">Trier par <select id="sort"><option value="name"${sort==="name"?" selected":""}>prénom</option><option value="prog"${sort==="prog"?" selected":""}>avancée</option><option value="seen"${sort==="seen"?" selected":""}>dernière venue</option></select></label></div>
+     <div class="scards">${rows.map(s=>{const pi=s.w.cur,pp=s.w.per[pi],n=s.w.per[pi].next,own=s.settings&&Object.keys(s.settings).length;
+      return `<button class="scard" data-id="${s.id}"><div class="sctop"><span class="av">${avFull(s.avatar,s.look)}</span><span class="scn"><b>${esc(s.name)}</b><small class="seen ${fresh(s.last_seen)}">${ago(s.last_seen)}</small></span><span class="ss">${STAR_ON} ${s.w.stars}</span></div>
+        <div class="scnow" style="--c:${WORLDS[pi].c}"><small>${n?"Il en est à":"Statut"}</small><b>${n?`Période ${pi+1} · Niveau ${n.l}`:"Tout est fini !"}</b>${n?`<span>${GNAME[n.k]}</span>`:""}</div>
+        <div class="scper">${s.w.per.map((p,i)=>`<span class="pb" style="--c:${WORLDS[i].c}" title="Période ${i+1} : ${p.done} / ${p.total} jeux"><i style="width:${p.done/p.total*100}%"></i><em>P${i+1}</em></span>`).join("")}</div>
+        <div class="sctags">${!s.avatar?`<span class="tag2">Pas encore connecté</span>`:""}${own?`<span class="tag2 blue">Réglages perso</span>`:""}</div></button>`}).join("")}</div>
+     <p class="imghelp small">Touche un élève pour voir toutes ses étoiles, ses images secrètes et ses réglages. Les barres P1 à P5 montrent l'avancée dans chaque période.</p>`
+    :`<div class="empty"><p><b>Pas encore d'élèves.</b></p><p>Touche « + Ajouter un élève » et écris son prénom. L'enfant choisira lui-même son avatar.</p></div>`}`;
   const cs=document.getElementById("csel");if(cs)cs.onchange=()=>{TCUR=cs.value;LS("pompon-tclass",TCUR);studentsScreen()};
+  const so=document.getElementById("sort");if(so)so.onchange=()=>{LS("pompon-tsort",so.value);studentsScreen(so.value)};
+  document.getElementById("newcl").onclick=async()=>{const n=prompt("Nom de la nouvelle classe :","CP B");if(!n)return;
+    try{const code=await tq("/rest/v1/rpc/new_class_code",{method:"POST",body:{}});await tq("/rest/v1/classes",{method:"POST",body:{name:n.trim(),code}});TCUR=null;await loadClasses();TCUR=TCLASSES[TCLASSES.length-1].id;LS("pompon-tclass",TCUR);studentsScreen()}catch(e){alert(e.message)}};
   document.getElementById("add").onclick=()=>addStudent(cl);
   document.getElementById("cards").onclick=()=>cardsScreen(cl,rows);
   document.getElementById("cset").onclick=()=>settingsScreen(cl,null);
-  app.querySelectorAll(".strow").forEach(b=>b.onclick=()=>studentDetail(cl,rows.find(s=>s.id===b.dataset.id)));
+  app.querySelectorAll(".scard").forEach(b=>b.onclick=()=>studentDetail(cl,rows.find(s=>s.id===b.dataset.id)));
 }
 function randPics(){return shuffle(PICS).slice(0,3)}
 function addStudent(cl){
@@ -2402,14 +2440,19 @@ function addStudent(cl){
     catch(e){document.getElementById("se").textContent=/duplicate|unique/i.test(e.message)?"Ce prénom existe déjà dans la classe.":e.message}};
 }
 function studentDetail(cl,s){
-  const w=s.w,pr=s.progress||{};
-  app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><h1>${esc(s.name)}</h1><span></span></header>
-   <section class="who sdetail"><div class="shead"><span class="av big">${avFull(s.avatar,s.look)}</span><div><b>${esc(w.txt)}</b><br><small>${STAR_ON} ${w.stars} étoiles · ${ago(s.last_seen)}</small></div>
-     <div class="scode"><small>Images secrètes</small><div class="pslots">${picRow(s.pic_code)||"?"}</div></div></div>
+  const w=s.w,pr=s.progress||{},ms=mergeSet(cl.settings,s.settings),own=s.settings&&Object.keys(s.settings).length;
+  const sum=`3★ jusqu'à ${ms.err3} erreur${ms.err3>1?"s":""} · 2★ jusqu'à ${ms.err2} · ${ms.maxErr?`recommence au-delà de ${ms.maxErr}`:"ne recommence jamais"}${ms.read?" · aide à la lecture":""}${ms.all?" · tout débloqué":ms.upTo?` · périodes 1 à ${ms.upTo} débloquées`:""}${ms.hide.length?` · ${ms.hide.length} jeu${ms.hide.length>1?"x":""} masqué${ms.hide.length>1?"s":""}`:""}`;
+  app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour à la liste">${MAPI}</button><h1>${esc(s.name)}</h1><span></span></header>
+   <section class="who sdetail">
+    <div class="sdtop"><span class="av big">${avFull(s.avatar,s.look)}</span>
+      <div class="sdinfo"><small>Il en est à</small><b>${esc(w.txt)}</b><span>${STAR_ON} ${w.stars} étoiles · <span class="seen">${ago(s.last_seen)}</span></span></div>
+      <div class="scode"><small>Images secrètes (pour se connecter)</small><div class="pslots">${picRow(s.pic_code)||"?"}</div><button class="linkbtn" id="np">Changer les images</button></div></div>
+    <div class="sdset"><div><b>Réglages ${own?"personnalisés":"de la classe"}</b><small>${sum}</small></div><button class="btn" id="sset" style="--c:#2f8fc4">⚙ Régler pour ${esc(s.name)}</button></div>
+    <h3 class="sdh">Ses étoiles, jeu par jeu</h3>
     ${WORLDS.map((wd,wi)=>`<div class="pblock" style="--c:${wd.c};--on:${wd.on}"><h3><span class="rnum">${wd.p}</span>${svg(WART(wd.id))}${wd.name}<small class="pdone">${w.per[wi].done} / ${w.per[wi].total} jeux</small></h3>
-      <table class="stab"><tr><th></th>${gamesOf(wi).map(k=>`<th>${GNAME[k]}</th>`).join("")}</tr>
-      ${[1,2,3].map(l=>`<tr><th>Niveau ${l}</th>${gamesOf(wi).map(k=>{const v=pr[wd.id+SUF[k]+"@"+l]||0;return `<td>${v?STAR_ON.repeat(v):"–"}</td>`}).join("")}</tr>`).join("")}</table></div>`).join("")}
-    <div class="row"><button class="btn" id="sset" style="--c:#2f8fc4">Réglages de ${esc(s.name)}</button><button class="btn alt" id="np">Nouvelles images secrètes</button><button class="btn" id="del" style="--c:#e05a47">Supprimer l'élève</button></div><span class="err" id="de"></span></section>`;
+      <div class="tscroll"><table class="stab"><tr><th></th>${GSETS[wd.id].map(k=>`<th class="${ms.hide.includes(k)?"hid":""}">${GNAME[k]}${ms.hide.includes(k)?"<br><small>(masqué)</small>":""}</th>`).join("")}</tr>
+      ${[1,2,3].map(l=>`<tr><th>Niveau ${l}</th>${GSETS[wd.id].map(k=>{const v=pr[wd.id+SUF[k]+"@"+l]||0;return `<td class="${ms.hide.includes(k)?"hid":""}">${v?STAR_ON.repeat(v):"–"}</td>`}).join("")}</tr>`).join("")}</table></div></div>`).join("")}
+    <div class="row"><button class="btn" id="del" style="--c:#e05a47">Supprimer l'élève</button></div><span class="err" id="de"></span></section>`;
   document.getElementById("back").onclick=()=>studentsScreen();
   document.getElementById("sset").onclick=()=>settingsScreen(cl,s);
   document.getElementById("np").onclick=async()=>{const c=randPics().join("-");try{await tq("/rest/v1/rpc/teacher_set_pics",{method:"POST",body:{p_student:s.id,p_pics:c}});s.pic_code=c;studentDetail(cl,s)}catch(e){document.getElementById("de").textContent=e.message}};
