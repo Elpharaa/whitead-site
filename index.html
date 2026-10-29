@@ -586,13 +586,14 @@ body.racing #mascot,body:has(.prog,.imgadmin,.sndadmin,.tlist,.sdetail,.setg,.ca
 /* ---- Atelier J'écris ---- */
 .wcard{display:flex;align-items:center;gap:16px;width:100%;padding:14px 22px;border:5px solid var(--ink);border-radius:30px;background:#fff;box-shadow:0 8px 0 #2f5bd9;font-family:var(--display);text-align:left}
 .wcard .wci .ic{width:72px;height:72px}.wcard b{font-size:30px}.wcard small{font-family:var(--body);font-size:16px;color:#6b6553;margin-left:auto}
+.wkinds{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;width:100%}.wkind{display:flex;flex-direction:column;align-items:center;gap:6px;padding:22px 12px;background:#fff;border:5px solid var(--ink);border-radius:28px;box-shadow:0 8px 0 var(--c);font-family:var(--display)}.wkind b{font-size:28px}.wkind small{font-family:var(--body);color:#6b6553}.wki .ic{width:64px;height:64px}
 .whome .wh{margin:8px 0 0;align-self:flex-start}.wgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;width:100%}
 .wtile{background:#fff;border:4px solid var(--ink);border-radius:22px;box-shadow:0 6px 0 var(--c);padding:8px 6px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;color:#2b2b2b}
 .wtile.done{background:color-mix(in srgb,var(--c) 14%,#fff)}.cursmini{width:100%;height:70px}.wtile .nst .ic{width:18px}
 .wgame{gap:12px}.wtop{display:flex;align-items:center;gap:14px;flex-wrap:wrap;justify-content:center}.wtop .listen{padding:10px 18px}.wtop .listen .ic{width:46px;height:46px}
 .wpic .ic{width:84px;height:84px;background:var(--tile);border:4px solid var(--ink);border-radius:20px;padding:6px}
 .wtools{display:flex;gap:8px}.wtool{display:flex;align-items:center;gap:6px;font:700 16px var(--body);background:#fff;border:3px solid var(--ink);border-radius:999px;padding:6px 14px}.wtool .ic{width:26px;height:26px}
-.wtool[aria-pressed=true]{background:#fff3c4;box-shadow:inset 0 0 0 3px var(--sun)}
+.wtool[hidden]{display:none}.wtool[aria-pressed=true]{background:#fff3c4;box-shadow:inset 0 0 0 3px var(--sun)}
 .wboard{position:relative;margin:0 auto;border:5px solid var(--ink);border-radius:18px;overflow:hidden;background:#fff;touch-action:none}
 .wboard svg,.wboard canvas{position:absolute;inset:0;width:100%;height:100%}.wboard canvas{touch-action:none;cursor:crosshair}
 .wbtns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}.wbtns .btn{display:inline-flex;align-items:center;gap:8px}.wbtns .btn .ic{width:26px;height:26px}
@@ -3227,19 +3228,25 @@ function wSound(it){if(it.k==="let"){const b={"à":"a","â":"a","ê":"è","ë":"
 function writeHome(wi){
   document.body.classList.add("home");delete document.body.dataset.world;G=null;window.scrollTo(0,0);
   if(wi==null){wi=LS("pompon-wper");if(!(typeof wi==="number"&&wi>=0&&wi<WORLDS.length&&periodOpen(wi))){wi=0;for(let i=0;i<WORLDS.length;i++)if(periodOpen(i)&&!periodDone(i)){wi=i;break}}}LS("pompon-wper",wi);
-  const w=WORLDS[wi],items=writeItems(wi),grp=k=>items.map((it,i)=>[it,i]).filter(([it])=>it.k===k);
-  const tile=([it,i])=>{const s=best[wKey(wi,it.t)]||0;return `<button class="wtile${s?" done":""}" data-i="${i}" style="--c:${w.c}">${cursSvg(it.t)}<span class="nst">${starRow(s)}</span></button>`};
+  const w=WORLDS[wi],items=writeItems(wi);
+  const kinds=[["let","Une lettre","a"],["syl","Une syllabe","la"],["mot","Un mot","lapin"]].filter(([k])=>items.some(it=>it.k===k));
+  const stars=k=>{const L=items.filter(it=>it.k===k);return [L.filter(it=>(best[wKey(wi,it.t)]||0)>=2).length,L.length]};
   app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><h1>J'écris</h1><span></span></header>
    <section class="who whome" style="--c:${w.c};--on:${w.on}">
     <div class="ptabs">${WORLDS.map((x,i)=>`<button class="ptab" data-w="${i}" aria-pressed="${i===wi}" ${periodOpen(i)?"":"disabled"} style="--c:${x.c};--on:${x.on}">${periodOpen(i)?"":LOCKI}${x.p} · ${x.name.replace(/^(La |Le )/,"")}</button>`).join("")}</div>
-    ${[["let","Les lettres"],["syl","Les syllabes"],["mot","Les mots"]].map(([k,h])=>{const g=grp(k);return g.length?`<h3 class="wh">${h}</h3><div class="wgrid">${g.map(tile).join("")}</div>`:""}).join("")}
+    <p class="ahelp">Tu écoutes, puis tu écris ce que tu entends. Ensuite, tu vois la réponse.</p>
+    <div class="wkinds">${kinds.map(([k,l])=>{const [d,n]=stars(k);return `<button class="wkind" data-k="${k}" style="--c:${w.c}"><span class="wki">${SPEAKER}</span><b>${l}</b><small>${d} / ${n} réussi${d>1?"s":""}</small></button>`}).join("")}</div>
    </section>`;
   document.getElementById("back").onclick=()=>{stopVoice();periodsScreen()};
   app.querySelectorAll(".ptab").forEach(b=>b.onclick=()=>{if(!b.disabled)writeHome(+b.dataset.w)});
-  app.querySelectorAll(".wtile").forEach(b=>b.onclick=()=>{stopVoice();writeItem(wi,+b.dataset.i)});
-  say("Choisis ce que tu veux écrire.",null);
+  app.querySelectorAll(".wkind").forEach(b=>b.onclick=()=>{stopVoice();writePick(wi,b.dataset.k)});
+  say("Choisis : une lettre, une syllabe ou un mot.",null);
 }
-function dotsMode(){const d=S().dots||"choix";if(d==="oui")return true;if(d==="non")return false;const v=LS("pompon-wdots");return v===null||v===undefined?true:!!v}
+/* au hasard, en donnant la priorité à ce qui n'est pas encore réussi ; jamais deux fois de suite le même */
+function writePick(wi,k,last){const items=writeItems(wi),L=items.map((it,i)=>[it,i]).filter(([it])=>it.k===k);
+  const todo=L.filter(([it])=>(best[wKey(wi,it.t)]||0)<2&&it.t!==last),pool=todo.length?todo:L.filter(([it])=>it.t!==last);
+  const pick=(pool.length?pool:L)[Math.random()*(pool.length||L.length)|0];writeItem(wi,pick[1])}
+function dotsMode(){const d=S().dots||"choix";if(d==="oui")return true;if(d==="non")return false;const v=LS("pompon-wdots");return v===true}
 function writeItem(wi,i){
   const items=writeItems(wi),it=items[i];if(!it)return writeHome(wi);
   const w=WORLDS[wi],M=cursiveOf(it.t),cx=(M.x0+M.x1)/2,vw=Math.max(900,M.x1-M.x0+420)+STRIP,vx=cx-(vw-STRIP)/2-STRIP;
@@ -3248,10 +3255,10 @@ function writeItem(wi,i){
   const snd=wSound(it),pic=it.k==="mot"&&hasImg(it.t)?`<span class="wpic">${svg(ART(it.t))}</span>`:"";
   const ask=it.k==="let"?"_w_lettre":it.k==="syl"?"_w_syl":"_w_mot";
   app.innerHTML=`<section class="game wgame" style="--c:${w.c};--on:${w.on}">
-   <div class="gtop"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><span class="gtitle"><b>J'écris</b> <small>${i+1} / ${items.length}</small></span><span></span></div>
+   <div class="gtop"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><span class="gtitle"><b>J'écris</b> <small>${it.k==="let"?"une lettre":it.k==="syl"?"une syllabe":"un mot"}</small></span><span></span></div>
    <div class="wtop"><button class="listen" id="wplay" aria-label="Écouter">${SPEAKER}</button>${pic}
      <span class="wtools">${(S().dots||"choix")==="choix"?`<button class="wtool" id="wdots" aria-pressed="${dots}">${svg('<path d="M14 70 Q30 20 50 50 T86 30" fill="none" stroke="#7a7462" stroke-width="9" stroke-linecap="round" stroke-dasharray="1 16"/>')} Pointillés</button>`:""}
-     <button class="wtool" id="wshow">${svg('<path d="M30 20 L80 50 L30 80Z" fill="#4f9f45"/>')} Modèle</button></span></div>
+     <button class="wtool" id="wshow" ${dots?"":"hidden"}>${svg('<path d="M30 20 L80 50 L30 80Z" fill="#4f9f45"/>')} Modèle</button></span></div>
    <div class="wboard" id="wboard">
     <svg id="wsvg" viewBox="${vx} 0 ${vw} ${VH}" preserveAspectRatio="none"><defs>
       <linearGradient id="gsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc3f2"/><stop offset="1" stop-color="#cfeafc"/></linearGradient>
@@ -3289,7 +3296,7 @@ function writeItem(wi,i){
   const playIt=()=>{if(snd)play(snd)};
   document.getElementById("wplay").onclick=playIt;
   document.getElementById("back").onclick=()=>{stopVoice();window.removeEventListener("resize",fit);G=null;writeHome(wi)};
-  const dB=document.getElementById("wdots");if(dB)dB.onclick=()=>{dots=!dots;LS("pompon-wdots",dots);dB.setAttribute("aria-pressed",dots);drawDots();if(dots)say("Repasse sur les pointillés. Commence au point vert.","_w_dots")};
+  const dB=document.getElementById("wdots");if(dB)dB.onclick=()=>{dots=!dots;LS("pompon-wdots",dots);dB.setAttribute("aria-pressed",dots);drawDots();document.getElementById("wshow").hidden=!dots;if(dots)say("Repasse sur les pointillés. Commence au point vert.","_w_dots")};
   document.getElementById("wshow").onclick=()=>{stopVoice();say("Regarde bien comment on trace.","_w_model");animateModel(animg,M,"#e2534a")};
   document.getElementById("wclear").onclick=()=>{if(checked){checked=false;document.getElementById("wres").innerHTML="";animg.innerHTML="";document.getElementById("wcheck").hidden=false}ink=[];redraw();drawDots()};
   document.getElementById("wcheck").onclick=()=>{
@@ -3298,10 +3305,10 @@ function writeItem(wi,i){
     const k=wKey(wi,it.t);if(r.stars>(best[k]||0)){best[k]=r.stars;save()}rec(it.t,r.stars>=2,ukey(wi,"g12"));
     if(r.stars>=2)sndGood();else sndBad();
     const msg=r.zone?r.zone:r.dirBad?["_w_sens","Attention au sens : regarde par où on commence."]:[["_w_0","Essaie encore. Regarde d'abord le modèle."],["_w_1","Pas mal ! Regarde bien comment on trace."],["_w_2","C'est bien ! Regarde le modèle pour faire encore mieux."],["_w_3","Bravo ! C'est très bien tracé !"]][r.stars];
-    document.getElementById("wres").innerHTML=`<div class="wstars">${starRow(r.stars)}</div><div class="wbtns"><button class="btn alt" id="wagain">Recommencer</button>${i+1<items.length?`<button class="btn" id="wnext" style="--c:${w.c}">Suivant ▶</button>`:`<button class="btn" id="wdone" style="--c:${w.c}">Fini !</button>`}</div>`;
+    document.getElementById("wres").innerHTML=`<div class="wstars">${starRow(r.stars)}</div><div class="wbtns"><button class="btn alt" id="wagain">Recommencer</button><button class="btn" id="wnext" style="--c:${w.c}">Un autre ▶</button><button class="btn alt" id="wdone">Changer</button></div>`;
     say(msg[1],msg[0],()=>{if(G===myG)animateModel(animg,M,"#3fae49")});
     document.getElementById("wagain").onclick=()=>{stopVoice();writeItem(wi,i)};
-    const nx=document.getElementById("wnext");if(nx)nx.onclick=()=>{stopVoice();writeItem(wi,i+1)};
+    const nx=document.getElementById("wnext");if(nx)nx.onclick=()=>{stopVoice();writePick(wi,it.k,it.t)};
     const dn=document.getElementById("wdone");if(dn)dn.onclick=()=>{stopVoice();writeHome(wi)};
   };
   setTimeout(()=>{if(G!==myG)return;const first=!LS("pompon-wintro");LS("pompon-wintro",1);
