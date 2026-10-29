@@ -3234,7 +3234,7 @@ function marelleModel(txt){if(MCACHE[txt])return MCACHE[txt];
   const k=0.055,pad=30,cv=document.createElement("canvas"),c=cv.getContext("2d");c.font=`${2000*k}px Marelle`;
   const W=Math.ceil(c.measureText(txt).width+pad*2),H=Math.ceil(4800*k+pad*2),base=pad+2880*k;cv.width=W;cv.height=H;
   c.font=`${2000*k}px Marelle`;c.fillStyle="#000";c.fillText(txt,pad,base);
-  const d=c.getImageData(0,0,W,H).data,im=new Uint8Array(W*H);for(let i=0;i<W*H;i++)im[i]=d[i*4+3]>110?1:0;
+  const d=c.getImageData(0,0,W,H).data,im=new Uint8Array(W*H);let ink=0;for(let i=0;i<W*H;i++){im[i]=d[i*4+3]>110?1:0;ink+=im[i]}
   /* amincissement (Zhang-Suen) */
   const at=(x,y)=>im[y*W+x];let ch=true;
   while(ch){ch=false;for(const pass of [0,1]){const del=[];
@@ -3259,16 +3259,89 @@ function marelleModel(txt){if(MCACHE[txt])return MCACHE[txt];
   HG.strokes.forEach((o,si)=>{const [a,b]=HG.L[o.li]||[0,1],[A,B]=ML[o.li]||[0,1];const pts=resample(o.s,10).map(([x,y])=>[A+(x-a)/Math.max(1,b-a)*(B-A),fy(y)]);
     pts.forEach(p=>guide.push([p[0],p[1],t++,o.li,o.sid]))});
   const li=x=>{for(let i=0;i<ML.length;i++)if(x<ML[i][1]+5)return i;return ML.length-1};
-  const T=guide.length;
-  const body=sk.filter(s=>!s[3]).map(([x,y,ci])=>{const l=li(x);let m=1e18,g=null;for(const q of guide){const dl=Math.abs(q[3]-l);const dd=(q[0]-x)**2+(q[1]-y)**2+(dl?(dl>1?1e8:2e5):0);if(dd<m){m=dd;g=q}}return [x,y,g?g[2]:0,"c"+ci]});
-  /* points et accents : après le corps, de gauche à droite */
-  const mk={};sk.filter(s=>s[3]).forEach(([x,y,ci])=>{(mk[ci]=mk[ci]||[]).push([x,y])});
-  const marks=Object.entries(mk).map(([ci,L])=>({ci,L,cx:L.reduce((s,p)=>s+p[0],0)/L.length})).sort((a,b)=>a.cx-b.cx);
-  const mpts=[];marks.forEach((o,j)=>{const L=o.L.sort((a,b)=>(b[1]-a[1])||(a[0]-b[0]));L.forEach((p,k)=>mpts.push([p[0],p[1],T+j*1000+k,"m"+o.ci]))});
-  const pts=[...body.sort((a,b)=>a[2]-b[2]),...mpts];
+  /* ---- le vrai chemin du crayon : on suit le squelette de Marelle, guidé pas à pas par le tracé Hershey ---- */
+  const SK=[],idx=new Int32Array(W*H).fill(-1);
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++)if(im[y*W+x]){idx[y*W+x]=SK.length;const ci=comp[y*W+x];SK.push({x,y,u:toU(x,y),ci,mark:csz[ci]<big*0.12&&csz[ci]<60})}
+  const nb=i=>{const s=SK[i],o=[];for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const j=idx[(s.y+dy)*W+s.x+dx];if(j>=0)o.push(j)}return o};
+  const thick=ink/Math.max(1,SK.length)/k/MSC; /* épaisseur du trait Marelle, en unités du tableau */
+  /* temps « idéal » de chaque pixel : le moment où le guide Hershey passe le plus près (même lettre) */
+  const G1=guide; /* avec la barre du t (faite à la fin) */
+  const TB=(guide.find(g=>g[4]>=1000)||[0,0,1e9])[2]; /* début des « marques » du guide (barre du t…) */
+  const tOf=s=>{const l=li(s.u[0]);let m=1e18,tt=0;for(const g of G1){const dl=Math.abs(l-g[3]);const dd=(s.u[0]-g[0])**2+(s.u[1]-g[1])**2+(dl?(dl>1?1e8:4e4):0);if(dd<m){m=dd;tt=g[2]}}return tt};
+  SK.forEach(s=>{if(!s.mark)s.t=tOf(s)});
+  /* graphe du squelette : nœuds = bouts et croisements, arêtes = morceaux de trait entre deux nœuds */
+  const deg=i=>nb(i).length,isN=new Uint8Array(SK.length);SK.forEach((s,i)=>{isN[i]=deg(i)!==2?1:0});
+  const nodeOf=new Int32Array(SK.length).fill(-1);let NN=0;
+  SK.forEach((s,i)=>{if(!isN[i]||nodeOf[i]>=0||s.mark)return;const q=[i];nodeOf[i]=NN;while(q.length){const j=q.pop();for(const m of nb(j))if(isN[m]&&nodeOf[m]<0){nodeOf[m]=NN;q.push(m)}}NN++});
+  const edges=[],used=new Uint8Array(SK.length);
+  const walk=(from,first)=>{const px=[from,first];let pr=from,c3=first;while(!isN[c3]){used[c3]=1;const n=nb(c3).filter(j=>j!==pr&&!(px.length>2&&j===px[px.length-3]));if(!n.length)break;
+      const nx=n.find(j=>isN[j]&&nodeOf[j]>=0)??n.find(j=>!used[j])??n[0];pr=c3;c3=nx;px.push(c3);if(c3===from)break;if(px.length>5000)break}return px};
+  SK.forEach((s,i)=>{if(s.mark||nodeOf[i]<0)return;for(const j of nb(i)){if(isN[j]||used[j])continue;
+      const px=walk(i,j);const e=px[px.length-1];if(nodeOf[e]<0)continue;edges.push({a:nodeOf[i],b:nodeOf[e],px})}});
+  /* morceaux sans nœud (un rond fermé) */
+  SK.forEach((s,i)=>{if(s.mark||isN[i]||used[i])return;nodeOf[i]=NN;isN[i]=1;const n=nb(i);used[i]=1;const px=walk(i,n[0]);edges.push({a:NN,b:NN,px});NN++});
+  /* les petits « nœuds » de passage (escaliers de pixels) ne sont pas de vrais croisements : on recolle les deux morceaux */
+  {let ch2=true;while(ch2){ch2=false;const I=Array.from({length:NN},()=>[]);edges.forEach((e,ei)=>{if(e.dead)return;I[e.a].push(ei);if(e.b!==e.a)I[e.b].push(ei)});
+    for(let n=0;n<NN;n++){const L=I[n];if(L.length!==2||L[0]===L[1])continue;const e1=edges[L[0]],e2=edges[L[1]];if(e1.dead||e2.dead||e1.a===e1.b||e2.a===e2.b)continue;
+      const x=e1.a===n?e1.b:e1.a,y=e2.a===n?e2.b:e2.a;const p1=e1.a===n?e1.px.slice().reverse():e1.px,p2=e2.a===n?e2.px:e2.px.slice().reverse();
+      e1.dead=e2.dead=true;edges.push({a:x,b:y,px:[...p1,...p2.slice(1)]});ch2=true;break}}}
+  for(let i=edges.length-1;i>=0;i--)if(edges[i].dead)edges.splice(i,1);
+  edges.forEach(e=>{const ts=e.px.map(i=>SK[i].t).sort((x,y)=>x-y);e.t=ts[ts.length>>1]??0;
+    const h=Math.max(1,e.px.length>>2),t0=e.px.slice(0,h).reduce((s,i)=>s+SK[i].t,0)/h,t1=e.px.slice(-h).reduce((s,i)=>s+SK[i].t,0)/h;e.fw=t1>=t0});
+  const inc=Array.from({length:NN},()=>[]);edges.forEach((e,ei)=>{inc[e.a].push(ei);if(e.b!==e.a)inc[e.b].push(ei)});
+  /* parcours du crayon : on prend toujours le morceau que le guide fait en premier ; au bout d'un trait sans suite,
+     on repasse sur le trait déjà fait (comme pour le m ou le d) */
+  const vis=[],paths=[];
+  const orient=(e,from)=>{if(e.a===e.b)return e.fw?e.px:e.px.slice().reverse();return e.a===from?e.px:e.px.slice().reverse()};
+  const nodeT=n=>Math.min(...inc[n].map(ei=>edges[ei].t),1e9);
+  const compNodes={};for(let n=0;n<NN;n++){const ei=inc[n][0];if(ei==null)continue;const ci=SK[edges[ei].px[0]].ci;(compNodes[ci]=compNodes[ci]||[]).push(n)}
+  const order=Object.values(compNodes).sort((A,B)=>Math.min(...A.map(nodeT))-Math.min(...B.map(nodeT)));
+  const startT=n=>Math.min(...inc[n].map(ei=>SK[orient(edges[ei],n)[0]].t));
+  for(const NL of order){
+    /* départ : l'endroit que le guide fait en premier ; s'il y a un bout de trait presque aussi tôt (l'attaque sur la ligne), on part du bout */
+    let cur=NL.reduce((a,b)=>startT(b)<startT(a)?b:a);const t0=startT(cur);
+    /* l'attaque : si le morceau commence par un petit trait qui part de la ligne, tout à gauche, on part de là */
+    let lead=false;
+    {const px=n=>SK[orient(edges[inc[n][0]],n)[0]].u,minX=Math.min(...NL.flatMap(n=>inc[n].flatMap(ei=>edges[ei].px.map(q=>SK[q].u[0])))),E=NL.filter(n=>inc[n].length===1&&px(n)[1]<XH*0.6).sort((a,b)=>px(a)[0]-px(b)[0])[0],L0=ML[li(minX)];
+      if(E!=null&&(px(E)[0]-minX<18||px(E)[0]<L0[0]+0.4*(L0[1]-L0[0]))){cur=E;lead=true}}
+    /* sinon : on part exactement là où le guide commence (le haut du rond du a, du c, du g…), quitte à couper un trait en deux */
+    if(!lead){const arr=[...new Set(NL.flatMap(n=>inc[n].flatMap(ei=>edges[ei].px)))];let P=null;
+      for(const g of G1){let m=1e18,b=-1;for(const i of arr){const dd=(SK[i].u[0]-g[0])**2+(SK[i].u[1]-g[1])**2;if(dd<m){m=dd;b=i}}if(m<75*75){P=b;break}}
+      if(P!=null){const ei=NL.flatMap(n=>inc[n]).find(ei=>{const j=edges[ei].px.indexOf(P);return j>0&&j<edges[ei].px.length-1});
+        if(ei!=null&&!vis[ei]){const e=edges[ei],j=e.px.indexOf(P),N2=NN++;inc[N2]=[];
+          const mk=(a,b,px)=>{const o={a,b,px};const ts=px.map(i=>SK[i].t).sort((x,y)=>x-y);o.t=ts[ts.length>>1]??0;const h=Math.max(1,px.length>>2);o.fw=px.slice(-h).reduce((s,i)=>s+SK[i].t,0)>=px.slice(0,h).reduce((s,i)=>s+SK[i].t,0);edges.push(o);return edges.length-1};
+          const i1=mk(e.a,N2,e.px.slice(0,j+1)),i2=mk(N2,e.b,e.px.slice(j));vis[ei]=1;
+          for(const n of [e.a,e.b]){inc[n]=inc[n].filter(x=>x!==ei)}inc[e.a].push(i1);inc[e.b].push(i2);inc[N2].push(i1,i2);NL.push(N2);cur=N2}
+        else{const n=NL.find(n=>inc[n].some(ei=>orient(edges[ei],n)[0]===P));if(n!=null)cur=n}}}
+    const out=[];
+    for(let guard=0;guard<800;guard++){
+      const free=inc[cur].filter(ei=>!vis[ei]);
+      if(free.length){const ei=free.reduce((a,b)=>edges[b].t<edges[a].t?b:a),e=edges[ei];vis[ei]=1;const o=orient(e,cur);out.push(...(out.length?o.slice(1):o));cur=e.a===e.b?e.a:(e.a===cur?e.b:e.a);continue}
+      let best=null;for(const n of NL){const f=inc[n].filter(ei=>!vis[ei]);if(!f.length)continue;const tt=Math.min(...f.map(ei=>edges[ei].t));if(!best||tt<best[1])best=[n,tt]}
+      if(!best)break;
+      /* on revient en repassant sur le trait, par le plus court chemin */
+      const dist=new Map([[cur,0]]),prev=new Map([[cur,null]]),Q=[[0,cur]];
+      while(Q.length){Q.sort((x,y)=>x[0]-y[0]);const [dd,n]=Q.shift();if(n===best[0])break;if(dd>dist.get(n))continue;
+        for(const ei of inc[n]){const e=edges[ei],m=e.a===n?e.b:e.a,nd=dd+e.px.length;if(!dist.has(m)||nd<dist.get(m)){dist.set(m,nd);prev.set(m,[n,ei]);Q.push([nd,m])}}}
+      if(!prev.has(best[0])){paths.push(out.slice());out.length=0;cur=best[0];continue}
+      const chain=[];let n=best[0];while(prev.get(n)){const [pn,ei]=prev.get(n);chain.push([pn,ei]);n=pn}chain.reverse();
+      /* revenir sur un seul trait (m, n, d) : on repasse ; plus loin (la barre du t) : on lève le crayon */
+      if(best[1]>=TB||chain.reduce((s,[,ei])=>s+edges[ei].px.length,0)>150){paths.push(out.slice());out.length=0;cur=best[0];continue}
+      for(const [pn,ei] of chain){const e=edges[ei],o=orient(e,pn);out.push(...o.slice(1));cur=e.a===pn?e.b:e.a}}
+    if(out.length)paths.push(out)}
+  /* points, accents : on les trace à la fin, de gauche à droite, du haut vers le bas */
+  const mcomp={};SK.forEach((s,i)=>{if(s.mark)(mcomp[s.ci]=mcomp[s.ci]||[]).push(i)});
+  Object.values(mcomp).sort((A,B)=>SK[A[0]].x-SK[B[0]].x).forEach(L=>{
+    let st=L.filter(i=>nb(i).length<=1).sort((a,b)=>SK[a].y-SK[b].y||SK[b].x-SK[a].x)[0]??L[0];
+    const seen=new Set([st]),o=[st];let c2=st;for(;;){const n=nb(c2).filter(j=>!seen.has(j));if(!n.length)break;c2=n[0];seen.add(c2);o.push(c2)}
+    L.forEach(i=>{if(!seen.has(i))o.push(i)});paths.push(o)});
+  /* lissage léger, puis en unités */
+  const strokes=paths.filter(p=>p.length>1||SK[p[0]].mark).map(p=>{const P=p.map(i=>SK[i].u);
+    return P.map((q,i)=>{let sx=0,sy=0,n=0;for(let j=Math.max(0,i-3);j<=Math.min(P.length-1,i+3);j++){sx+=P[j][0];sy+=P[j][1];n++}return i===0||i===P.length-1?q:[sx/n,sy/n]})}).map(s=>s.length>2?resample(s,8):s);
+  const pts=[];strokes.forEach((s,si)=>s.forEach(q=>pts.push([q[0],q[1],pts.length,si])));
   let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;pts.forEach(([x,y])=>{x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y)});
-  const starts=[];const seen=new Set();pts.forEach(p=>{if(!seen.has(p[3])){seen.add(p[3]);starts.push(p)}}); /* un départ par morceau */
-  return MCACHE[txt]={txt,pts,x0,x1,y0,y1,starts,fs:2000/MSC}}
+  const starts=strokes.map(s=>{const a=s[0],b=s[Math.min(s.length-1,4)];return [a[0],a[1],Math.atan2(b[1]-a[1],b[0]-a[0])]});
+  return MCACHE[txt]={txt,pts,strokes,x0,x1,y0,y1,starts,thick,fs:2000/MSC}}
 
 /* les éléments à écrire de chaque période */
 function writeItems(wi){const w=WORLDS[wi],S0=WSETS[w.id]||{let:[],syl:[]};
@@ -3353,8 +3426,9 @@ function writeItem2(wi,i){
   function redraw(){cx2.clearRect(0,0,can.width,can.height);cx2.lineCap="round";cx2.lineJoin="round";cx2.strokeStyle=checked?"rgba(47,91,217,.45)":"#2f5bd9";cx2.lineWidth=Math.max(3,can.width/vw*34);
     for(const s of ink){cx2.beginPath();s.forEach((p,k)=>{const [a,b]=toP(p);k?cx2.lineTo(a,b):cx2.moveTo(a,b)});if(s.length===1){const [a,b]=toP(s[0]);cx2.lineTo(a+.1,b)}cx2.stroke()}}
   function drawDots(){if(!(dots&&!checked)){dotg.innerHTML="";return}let last=null,h="";
-    for(const p of M.pts){if(!last||Math.hypot(p[0]-last[0],p[1]-last[1])>44){h+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="10" fill="#b9b39f"/>`;last=p}}
-    dotg.innerHTML=h+M.starts.map((s,k)=>`<circle cx="${s[0]}" cy="${s[1]}" r="30" fill="#3fae49"/><text x="${s[0]}" y="${-s[1]+14}" transform="scale(1 -1)" text-anchor="middle" font-size="40" font-weight="700" fill="#fff">${k+1}</text>`).join("")}
+    for(const s of M.strokes){last=null;for(const p of s){if(!last||Math.hypot(p[0]-last[0],p[1]-last[1])>40){h+=`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="11" fill="#b9b39f"/>`;last=p}}}
+    dotg.innerHTML=h+M.starts.map((s,k)=>{const a=s[2],ax=s[0]+Math.cos(a)*62,ay=s[1]+Math.sin(a)*62;
+      return `<path d="M${ax+Math.cos(a)*26} ${ay+Math.sin(a)*26} L${ax+Math.cos(a+2.4)*22} ${ay+Math.sin(a+2.4)*22} L${ax+Math.cos(a-2.4)*22} ${ay+Math.sin(a-2.4)*22}Z" fill="#3fae49"/><circle cx="${s[0]}" cy="${s[1]}" r="30" fill="#3fae49"/><text x="${s[0]}" y="${-s[1]+14}" transform="scale(1 -1)" text-anchor="middle" font-size="40" font-weight="700" fill="#fff">${k+1}</text>`}).join("")}
   window.addEventListener("resize",fit);fit();drawDots();
   const down=e=>{if(checked||G!==myG)return;cur=[toU(e)];ink.push(cur);redraw()},move=e=>{if(!cur)return;const p=toU(e),l=cur[cur.length-1];if(Math.hypot(p[0]-l[0],p[1]-l[1])>4){cur.push(p);redraw()}},end=()=>{cur=null};
   if(window.PointerEvent){can.addEventListener("pointerdown",e=>{e.preventDefault();try{can.setPointerCapture(e.pointerId)}catch(x){}down(e)});can.addEventListener("pointermove",e=>{e.preventDefault();move(e)});can.addEventListener("pointerup",end);can.addEventListener("pointercancel",end)}
@@ -3386,18 +3460,20 @@ function writeItem2(wi,i){
     if(first)say("Écoute bien, puis écris dans les lignes. Les petites lettres restent dans l'herbe. Les grandes boucles montent dans le ciel. Les queues descendent dans la terre.","_w_intro",()=>{if(G===myG)play(ask,()=>playIt())});
     else{bubble.textContent=it.k==="let"?"Écris la lettre.":it.k==="syl"?"Écris la syllabe.":"Écris le mot.";play(ask,()=>playIt())}},350);
 }
-/* le crayon montre le bon tracé : on dévoile la lettre Marelle le long de son trait, dans l'ordre d'écriture */
+/* le crayon montre le bon tracé (comme les applis d'écriture) : la lettre Marelle apparaît derrière le crayon, trait après trait,
+   à vitesse régulière, avec une petite pause quand on lève le crayon */
 function animateModel(M,col){const mg=document.getElementById("wmg"),tx=document.getElementById("wtxt"),ag=document.getElementById("wanim");if(!mg||!tx)return;
   const NS="http://www.w3.org/2000/svg",myG=G;mg.innerHTML="";ag.innerHTML="";tx.setAttribute("fill",col);
+  const dg=document.getElementById("wdotg");if(dg)dg.style.opacity="0"; /* pendant le modèle, on cache les pointillés : le trait reste net */
   const g=document.createElementNS(NS,"g");g.setAttribute("transform",`translate(0 ${YTOP}) scale(1 -1)`);mg.appendChild(g);
-  const pen=document.createElementNS(NS,"circle");pen.setAttribute("r","26");pen.setAttribute("fill","#ffd34d");pen.setAttribute("stroke","#2b2b2b");pen.setAttribute("stroke-width","8");ag.appendChild(pen);
-  const P=M.pts;let i=0,t0=null,last=null;const PER=2.2; /* points par image */
-  const step=ts=>{if(G!==myG||!mg.isConnected)return;if(t0===null)t0=ts;const want=Math.min(P.length,Math.floor((ts-t0)/16*PER));
-    for(;i<want;i++){const p=P[i];if(last&&Math.hypot(p[0]-last[0],p[1]-last[1])>120){t0=ts-(i/PER)*16-260} /* lever le crayon : petite pause */
-      if(!last||Math.hypot(p[0]-last[0],p[1]-last[1])>6){const c=document.createElementNS(NS,"circle");c.setAttribute("cx",p[0].toFixed(1));c.setAttribute("cy",p[1].toFixed(1));c.setAttribute("r","46");c.setAttribute("fill","#fff");g.appendChild(c);last=p}
-      pen.setAttribute("cx",p[0]);pen.setAttribute("cy",p[1])}
-    if(i>=P.length){pen.remove();const r=document.createElementNS(NS,"rect");r.setAttribute("x",-5000);r.setAttribute("y",-5000);r.setAttribute("width",20000);r.setAttribute("height",20000);r.setAttribute("fill","#fff");g.appendChild(r);return}
-    requestAnimationFrame(step)};requestAnimationFrame(step)}
+  const W=Math.max(40,M.thick*2.1);
+  const els=M.strokes.map(s=>{const p=document.createElementNS(NS,"path");p.setAttribute("d",smoothD(s.map(q=>[+q[0].toFixed(1),+q[1].toFixed(1)])));p.setAttribute("fill","none");p.setAttribute("stroke","#fff");
+    p.setAttribute("stroke-width",W);p.setAttribute("stroke-linecap","round");p.setAttribute("stroke-linejoin","round");g.appendChild(p);const L=Math.max(1,p.getTotalLength());p.style.strokeDasharray=L+" "+(L+10);p.style.strokeDashoffset=L;return [p,L]});
+  const pen=document.createElementNS(NS,"g");pen.innerHTML=`<circle r="30" fill="#ffd34d" stroke="#2b2b2b" stroke-width="8"/>`;ag.appendChild(pen);
+  let k=0,t0=null;const SPD=0.7; /* unités par milliseconde : régulier, ni trop vite ni trop lent */
+  const step=ts=>{if(G!==myG||!mg.isConnected)return;if(k>=els.length){pen.remove();if(dg)dg.style.opacity="";const r=document.createElementNS(NS,"rect");r.setAttribute("x",-1e4);r.setAttribute("y",-1e4);r.setAttribute("width",3e4);r.setAttribute("height",3e4);r.setAttribute("fill","#fff");g.appendChild(r);return}
+    const [p,L]=els[k];if(t0===null)t0=ts;const d=Math.min(L,(ts-t0)*SPD);p.style.strokeDashoffset=L-d;const pt=p.getPointAtLength(d);pen.setAttribute("transform",`translate(${pt.x} ${pt.y})`);
+    if(d>=L){k++;t0=null;setTimeout(()=>requestAnimationFrame(step),k<els.length?420:0);return}requestAnimationFrame(step)};requestAnimationFrame(step)}
 /* note : on compare au modèle (précision, couverture, sens, lignes) */
 function resample(s,step){const o=[s[0]];let acc=0;for(let i=1;i<s.length;i++){const a=s[i-1],b=s[i],d=Math.hypot(b[0]-a[0],b[1]-a[1]);if(!d)continue;
   let t=step-acc;while(t<=d){o.push([a[0]+(b[0]-a[0])*t/d,a[1]+(b[1]-a[1])*t/d]);t+=step}acc=d-(t-step)}if(o.length<2)o.push(s[s.length-1]);return o}
