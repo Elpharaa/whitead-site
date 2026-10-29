@@ -1,8 +1,8 @@
-/* Pompon au CP : le site continue de marcher sans internet (version 92933fa2) */
-const CACHE="pompon-92933fa2",SONS="pompon-sons",POLICES="pompon-polices";
+/* Pompon au CP : le site continue de marcher sans internet (version 6f0561e3) */
+const CACHE="pompon-6f0561e3",SONS="pompon-sons",POLICES="pompon-polices",VOIX="pompon-voix";
 const CORE=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./favicon.svg","./favicon-32.png","./apple-touch-icon.png"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
-self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>![CACHE,SONS,POLICES].includes(k)).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>![CACHE,SONS,POLICES,VOIX].includes(k)).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 /* d'abord le cache (sons, polices) : ils ne changent jamais */
 const cacheFirst=(name,r)=>caches.open(name).then(c=>c.match(r).then(m=>m||fetch(r).then(res=>{if(res.ok||res.type==="opaque")c.put(r,res.clone());return res})));
 self.addEventListener("fetch",e=>{const r=e.request;if(r.method!=="GET")return;const u=new URL(r.url);
