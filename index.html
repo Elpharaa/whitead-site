@@ -3223,7 +3223,7 @@ function wSound(it){if(it.k==="let"){const b={"à":"a","â":"a","ê":"è","ë":"
   if(it.k==="syl")return "_sy_"+it.t;return wkey(it.t)}
 function writeHome(wi){
   document.body.classList.add("home");delete document.body.dataset.world;G=null;window.scrollTo(0,0);
-  if(wi==null){wi=LS("pompon-wper");if(!(wi>=0&&periodOpen(wi))){wi=0;for(let i=0;i<WORLDS.length;i++)if(periodOpen(i)&&!periodDone(i)){wi=i;break}}}LS("pompon-wper",wi);
+  if(wi==null){wi=LS("pompon-wper");if(!(typeof wi==="number"&&wi>=0&&wi<WORLDS.length&&periodOpen(wi))){wi=0;for(let i=0;i<WORLDS.length;i++)if(periodOpen(i)&&!periodDone(i)){wi=i;break}}}LS("pompon-wper",wi);
   const w=WORLDS[wi],items=writeItems(wi),grp=k=>items.map((it,i)=>[it,i]).filter(([it])=>it.k===k);
   const tile=([it,i])=>{const s=best[wKey(wi,it.t)]||0;return `<button class="wtile${s?" done":""}" data-i="${i}" style="--c:${w.c}">${cursSvg(it.t)}<span class="nst">${starRow(s)}</span></button>`};
   app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><h1>J'écris</h1><span></span></header>
