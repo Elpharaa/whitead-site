@@ -422,6 +422,7 @@ body.home h1{text-shadow:0 3px 0 #fdfbfc}
 @keyframes m5car{0%{left:8%;top:72%}18%{left:28%;top:30%}36%{left:47%;top:70%}54%{left:64%;top:30%}72%{left:80%;top:68%}90%,100%{left:92%;top:24%}}
 @keyframes m5l1{0%,17%{opacity:0}19%,100%{opacity:1}}@keyframes m5l2{0%,35%{opacity:0}37%,100%{opacity:1}}@keyframes m5l3{0%,53%{opacity:0}55%,100%{opacity:1}}@keyframes m5l4{0%,71%{opacity:0}73%,100%{opacity:1}}
 @media (max-width:560px){.track{height:58vh}.rpic{width:84px}.rpic .mini{width:36px;height:36px;right:-8px;bottom:-8px}}
+body:has(.wgame) #mascot{display:none}
 body.racing #mascot,body:has(.prog,.imgadmin,.sndadmin,.tlist,.sdetail,.setg,.cards,.report) #mascot{display:none}
 .lchip{font-family:var(--body);font-weight:700;font-size:18px;letter-spacing:1px;white-space:nowrap}
 .lvltag .lchip{font-size:16px}
@@ -1432,6 +1433,8 @@ async function prefetchVoices(){let c;try{c=await vopen()}catch(e){return}
   for(let i=0;i<miss.length;i+=12){const ks=miss.slice(i,i+12);
     try{const rows=await sb(`/rest/v1/site_sounds?select=key,data,updated_at&key=in.(${ks.map(k=>encodeURIComponent('"'+k.replace(/["\\]/g,"\\$&")+'"')).join(",")})`);
       for(const r of rows){if(SIDX[r.key]===r.updated_at)await c.put(vreq(r.key),new Response(r.data))}}catch(e){return}}}
+/* expressions régulières : les vieilles tablettes (Safari avant 16.4) ne connaissent pas « (?<! … ) » : on l'enlève alors */
+const RXC={};function RX(s,f=""){const k=f+"|"+s;if(RXC[k])return RXC[k];let r;try{r=new RegExp(s,f)}catch(e){let x=s,y;do{y=x;x=x.replace(/\(\?<[=!](?:[^()]|\([^()]*\))*\)/g,"")}while(x!==y);r=new RegExp(x,f)}return RXC[k]=r}
 const hasA=k=>!!(REC(k)||AUDIO[k]||AIDX[k]);
 function loadBundle(b){if(!ALOAD[b])ALOAD[b]=fetch("audio/"+b+".json").then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(j=>{for(const k in j)if(!AUDIO[k])AUDIO[k]=j[k]}).catch(e=>{delete ALOAD[b];throw e});return ALOAD[b]}
 const loadPeriod=id=>{const b=ABUND.find(x=>x.startsWith(id+"-"));return b?loadBundle(b).catch(()=>{}):Promise.resolve()};
@@ -1496,7 +1499,7 @@ const isVerb=w=>BANK.ALL[w]==="v";
 const GENDER=BANK.ALL;
 function phHas(w,lst){const p=(BANK.PH[w]||"").replace(/ː/g,"");for(const s of lst){let i=p.indexOf(s);while(i>=0){if(s.endsWith("̃")||p[i+s.length]!=="̃")return true;i=p.indexOf(s,i+1)}}return false}
 function unitMatch(w,u){const c=core(w).toLowerCase();
-  if(u.re&&!new RegExp(u.re).test(c))return false;if(u.not&&new RegExp(u.not).test(c))return false;
+  if(u.re&&!RX(u.re).test(c))return false;if(u.not&&RX(u.not).test(c))return false;
   if(u.ph&&!phHas(w,u.ph))return false;if(u.phEnd&&!(BANK.PH[w]||"").endsWith(u.phEnd))return false;return true}
 const uMode=u=>u.mode||(u.ph?"son":"vois");
 const uShow=u=>u.show||u.lab;
@@ -1516,7 +1519,7 @@ const artOf=w=>!isNoun(w)?"":elided(w)?"l'":(GENDER[w]==="f"?"la ":"le ");
 /* surligne les lettres travaillées dans un mot */
 function hlUnits(word,units){const pre=word.match(/^(il |elle )/)?.[0]||"",c=word.slice(pre.length),lc=c.toLowerCase(),mk=new Array(c.length).fill(false);
   for(const u of units){
-    if(u.re){for(const m of lc.matchAll(new RegExp(u.re,"g")))for(let k=m.index;k<m.index+Math.max(1,m[0].length);k++)mk[k]=true}
+    if(u.re){for(const m of lc.matchAll(RX(u.re,"g")))for(let k=m.index;k<m.index+Math.max(1,m[0].length);k++)mk[k]=true}
     else{const gs=GR[u.id]||[];const all=[...new Set([...gs,...SKIPG])].sort((a,b)=>b.length-a.length);let i=0;
       while(i<lc.length){const g=all.find(g=>lc.startsWith(g,i));
         if(g&&gs.includes(g)&&!(g==="e"&&/^e[sxtz]?$/.test(lc.slice(i)))){for(let k=i;k<i+g.length;k++)mk[k]=true;i+=g.length}else i+=g?g.length:1}}}
@@ -1846,7 +1849,7 @@ function startSort(wi){
   document.body.classList.remove("home");window.scrollTo(0,0);
   const w=WORLDS[wi],tw=themeWords(wi);
   /* un son (ou une écriture) du niveau, choisi parmi ceux qui ont assez d'images avec et sans */
-  const absent=(k,u)=>uMode(u)==="son"?!phHas(k,u.ph):!new RegExp(u.re).test(core(k).toLowerCase());
+  const absent=(k,u)=>uMode(u)==="son"?!phHas(k,u.ph):!RX(u.re).test(core(k).toLowerCase());
   /* « J'entends » : il faut une image (on dit le mot dans sa tête) ; « Je vois » : le mot est écrit, l'image est un bonus */
   let strict=true;const usable=(k,u)=>uMode(u)==="son"?picable(k):(hasImg(k)||!isVerb(k))&&(!strict||readable(k,wi,LVL));
   const lw=levelWords(wi,LVL),others=u=>[...new Set([...lw,...lvlImg(wi,LVL),...tw])].filter(k=>usable(k,u)&&absent(k,u)&&!u.words.includes(k));
@@ -3249,7 +3252,7 @@ function writeItem(wi,i){
    <div class="wtop"><button class="listen" id="wplay" aria-label="Écouter">${SPEAKER}</button>${pic}
      <span class="wtools">${(S().dots||"choix")==="choix"?`<button class="wtool" id="wdots" aria-pressed="${dots}">${svg('<path d="M14 70 Q30 20 50 50 T86 30" fill="none" stroke="#7a7462" stroke-width="9" stroke-linecap="round" stroke-dasharray="1 16"/>')} Pointillés</button>`:""}
      <button class="wtool" id="wshow">${svg('<path d="M30 20 L80 50 L30 80Z" fill="#4f9f45"/>')} Modèle</button></span></div>
-   <div class="wboard" id="wboard" style="aspect-ratio:${vw}/${VH};width:min(100%,calc(58vh*${(vw/VH).toFixed(3)}))">
+   <div class="wboard" id="wboard">
     <svg id="wsvg" viewBox="${vx} 0 ${vw} ${VH}" preserveAspectRatio="none"><defs>
       <linearGradient id="gsky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7cc3f2"/><stop offset="1" stop-color="#cfeafc"/></linearGradient>
       <pattern id="gdirt" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="#a47b55"/><circle cx="8" cy="10" r="5" fill="#8a6141"/><circle cx="28" cy="24" r="6" fill="#bf9670"/><circle cx="16" cy="33" r="4" fill="#6f4c31"/></pattern></defs>
@@ -3268,16 +3271,21 @@ function writeItem(wi,i){
    <div class="wres" id="wres"></div></section>`;
   const board=document.getElementById("wboard"),can=document.getElementById("wcan"),cx2=can.getContext("2d"),dotg=document.getElementById("wdotg"),animg=document.getElementById("wanim");
   const toU=e=>{const r=can.getBoundingClientRect();return [vx+(e.clientX-r.left)/r.width*vw,YTOP-(e.clientY-r.top)/r.height*VH]};
-  const fit=()=>{const r=board.getBoundingClientRect(),dpr=window.devicePixelRatio||1;can.width=Math.round(r.width*dpr);can.height=Math.round(r.height*dpr);redraw()};
+  const fit=()=>{const pw=board.parentElement.clientWidth,bw=Math.min(pw,window.innerHeight*0.58*vw/VH);board.style.width=bw+"px";board.style.height=(bw*VH/vw)+"px";
+    const r=board.getBoundingClientRect(),dpr=window.devicePixelRatio||1;can.width=Math.round(r.width*dpr);can.height=Math.round(r.height*dpr);redraw()};
   const toP=([x,y])=>[(x-vx)/vw*can.width,(YTOP-y)/VH*can.height];
   function redraw(){cx2.clearRect(0,0,can.width,can.height);cx2.lineCap="round";cx2.lineJoin="round";cx2.strokeStyle=checked?"rgba(47,91,217,.45)":"#2f5bd9";cx2.lineWidth=Math.max(3,can.width/vw*30);
     for(const s of ink){cx2.beginPath();s.forEach((p,k)=>{const [a,b]=toP(p);k?cx2.lineTo(a,b):cx2.moveTo(a,b)});if(s.length===1){const [a,b]=toP(s[0]);cx2.lineTo(a+.1,b)}cx2.stroke()}}
   function drawDots(){dotg.innerHTML=dots&&!checked?M.strokes.map((s,k)=>`<path d="${smoothD(s)}" fill="none" stroke="#bdb7a3" stroke-width="22" stroke-linecap="round" stroke-dasharray="0.1 44"/>`).join("")+
      M.strokes.slice(0,M.nb).map((s,k)=>`<circle cx="${s[0][0]}" cy="${s[0][1]}" r="30" fill="#3fae49"/><text x="${s[0][0]}" y="${-s[0][1]+14}" transform="scale(1 -1)" text-anchor="middle" font-size="40" font-weight="700" fill="#fff">${k+1}</text>`).join(""):""}
   window.addEventListener("resize",fit);fit();drawDots();
-  can.addEventListener("pointerdown",e=>{if(checked||G!==myG)return;e.preventDefault();can.setPointerCapture(e.pointerId);cur=[toU(e)];ink.push(cur);redraw()});
-  can.addEventListener("pointermove",e=>{if(!cur)return;const p=toU(e),l=cur[cur.length-1];if(Math.hypot(p[0]-l[0],p[1]-l[1])>4){cur.push(p);redraw()}});
-  const end=()=>{cur=null};can.addEventListener("pointerup",end);can.addEventListener("pointercancel",end);
+  const down=e=>{if(checked||G!==myG)return;cur=[toU(e)];ink.push(cur);redraw()},move=e=>{if(!cur)return;const p=toU(e),l=cur[cur.length-1];if(Math.hypot(p[0]-l[0],p[1]-l[1])>4){cur.push(p);redraw()}},end=()=>{cur=null};
+  if(window.PointerEvent){can.addEventListener("pointerdown",e=>{e.preventDefault();try{can.setPointerCapture(e.pointerId)}catch(x){}down(e)});can.addEventListener("pointermove",e=>{e.preventDefault();move(e)});can.addEventListener("pointerup",end);can.addEventListener("pointercancel",end)}
+  /* au doigt (toutes les tablettes) */
+  can.addEventListener("touchstart",e=>{e.preventDefault();if(!window.PointerEvent)down(e.touches[0])},{passive:false});
+  can.addEventListener("touchmove",e=>{e.preventDefault();if(!window.PointerEvent)move(e.touches[0])},{passive:false});
+  can.addEventListener("touchend",e=>{if(!window.PointerEvent)end()});
+  if(!window.PointerEvent){can.addEventListener("mousedown",down);window.addEventListener("mousemove",move);window.addEventListener("mouseup",end)}
   const playIt=()=>{if(snd)play(snd)};
   document.getElementById("wplay").onclick=playIt;
   document.getElementById("back").onclick=()=>{stopVoice();window.removeEventListener("resize",fit);G=null;writeHome(wi)};
