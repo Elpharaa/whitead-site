@@ -2341,7 +2341,8 @@ function letterSound(c,word,pos){const base={"à":"a","â":"a","ä":"a","î":"i"
   return hasA("_ls_"+k)?"_ls_"+k:null}
 /* la voiture lit ce qui est écrit jusque-là : 1re lettre = son de la lettre, puis l+a = « la », « lap », « lapi », « lapin » */
 function raceSound(R,n){const typed=R.path.slice(0,n).map(i=>R.toks[i]).join(""),j=n-1,c=R.toks[R.path[j]];
-  if(n>1&&R.word.startsWith(typed)){if(typed===R.word&&hasA(R.word))return R.word;if(hasA("_pf_"+typed))return "_pf_"+typed}
+  if(n>1&&R.word.startsWith(typed)){if(typed===R.word&&hasA(R.word))return R.word;if(hasA("_pf_"+typed))return "_pf_"+typed;if(hasA(typed))return typed /* le début est déjà un mot (boxe dans boxeur) */}
+  if(/qu$/.test(typed)&&hasA("_ls_k"))return "_ls_k"; /* qu se lit k */
   return letterSound(c,R.word,j)}
 /* explications après une erreur : plusieurs morceaux de voix à la suite + texte dans la bulle */
 const wkey=w=>w?(hasA(artOf(w)+w)?artOf(w)+w:w):null;
