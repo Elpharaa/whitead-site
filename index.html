@@ -1838,6 +1838,8 @@ function phKey(s){s=(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,m=
    .replace(/oi/g,"wa").replace(/ou/g,"u").replace(/ai|ei|e´|´e/g,"e").replace(/ill/g,"y").replace(/ll/g,"l").replace(/([bdfgklmnprstvz])\1/g,"$1").replace(/h/g,"")
    .replace(/([aeiouy´123])s(?=[aeiouy´])/g,"$1z").replace(/[´]/g,"").replace(/(er|ez|et)$/,"e").replace(/([^aeiouy])e$/,"$1").replace(/[stdxp]$/,"").replace(/e(?=[a-z])/g,"e");
   return s}
+/* pour les mots courts : le micro confond souvent f/v, p/b, « eu »/« e » (feu → veux, fe…) */
+function softK(k){return (k||"").replace(/eu|œ/g,"e").replace(/v/g,"f").replace(/b/g,"p").replace(/d/g,"t").replace(/g/g,"k").replace(/z/g,"s").replace(/j/g,"$").replace(/([iuy])e$/,"$1").replace(/([^aeiouy123])e$/,"$1")}
 function lev(a,b){const m=a.length,n=b.length;if(!m)return n;if(!n)return m;let p=Array.from({length:n+1},(_,j)=>j);
   for(let i=1;i<=m;i++){const c=[i];for(let j=1;j<=n;j++)c[j]=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));p=c}return p[n]}
 function heardOk(target,alts){const T=phKey(target),tol=T.length<=3?0:T.length<=6?1:2;
@@ -1845,7 +1847,7 @@ function heardOk(target,alts){const T=phKey(target),tol=T.length<=3?0:T.length<=
     const cands=new Set([words.join(""),...words]);for(let i=0;i<words.length-1;i++)cands.add(words[i]+words[i+1]);
     /* « le lapin » : on enlève un petit mot devant */
     if(words.length>1&&/^(le|la|les|un|une|l|des|du|il|elle)$/.test(words[0]))cands.add(words.slice(1).join(""));
-    for(const c of cands){const K=phKey(c);if(K===T||(tol&&Math.abs(K.length-T.length)<=tol&&lev(K,T)<=tol))return true}}
+    for(const c of cands){const K=phKey(c);if(K===T||(tol&&Math.abs(K.length-T.length)<=tol&&lev(K,T)<=tol)||(T.length<=4&&T.length>1&&softK(K)===softK(T)))return true}}
   return false}
 /* découpage en syllabes pour aider à lire (la-pin, cho-co-lat) */
 function sylls(w){const V="aeiouyéèêëàâîïôöûùüœ";const isV=c=>V.includes(c);const keep=/^(bl|br|ch|cl|cr|dr|fl|fr|gl|gn|gr|ph|pl|pr|qu|gu|th|tr|vr)$/;
@@ -2006,7 +2008,7 @@ function lireStart(wi,k){const pick=(L,n)=>{const todo=shuffle(L.filter(t=>!best
 function matchWords(tw,heardTxt){const H=heardTxt.toLowerCase().replace(/[’']/g," ").replace(/[.!?,;:]/g," ").split(/\s+/).filter(Boolean).map(phKey);
   const T=tw.map(w=>w.toLowerCase().split(/[’']/).map(phKey));let p=0;
   return T.map(parts=>{const key=parts.join(""),last=parts[parts.length-1],tol=key.length<=3?0:key.length<=6?1:2;
-    for(let j=p;j<Math.min(H.length,p+4);j++){for(const c of [H[j],H[j]+(H[j+1]||""),(H[j-1]&&j>p?"":"")+H[j]]){if(c===key||c===last||(tol&&Math.abs(c.length-key.length)<=tol&&lev(c,key)<=tol)){p=j+1;return true}}}
+    for(let j=p;j<Math.min(H.length,p+4);j++){for(const c of [H[j],H[j]+(H[j+1]||""),(H[j-1]&&j>p?"":"")+H[j]]){if(c===key||c===last||(tol&&Math.abs(c.length-key.length)<=tol&&lev(c,key)<=tol)||(key.length<=4&&key.length>1&&softK(c)===softK(key))){p=j+1;return true}}}
     return false})}
 function lireRead(){const S0=G,it=S0.items[S0.i],w=S0.w,isW=S0.lk==="mot",self=S0.self,tw=isW?[it.t]:sWords(it.t),pics=isW?[it.t]:sPics(it.t),story=S0.lk==="his";
   document.body.classList.remove("home");document.body.dataset.world=w.id;window.scrollTo(0,0);
@@ -2049,7 +2051,7 @@ function lireRead(){const S0=G,it=S0.items[S0.i],w=S0.w,isW=S0.lk==="mot",self=S
       let cur="";r.lang="fr-FR";r.interimResults=true;r.maxAlternatives=IOS?1:5;r.continuous=!isW&&!IOS;
       r.onresult=e=>{cur="";for(const res of e.results){cur+=" "+res[0].transcript;for(const a of res){heard.push(a.transcript);if(acc)heard.push(acc+" "+a.transcript)}}
         best1=(acc+" "+cur).trim();heard.push(best1);
-        clearTimeout(silence);silence=setTimeout(()=>fin(true),isW?900:1800);fin([...e.results].every(x=>x.isFinal)&&isW)};
+        clearTimeout(silence);silence=setTimeout(()=>fin(true),isW?1300:1800);fin([...e.results].every(x=>x.isFinal)&&isW)};
       r.onerror=e=>{const er=e.error;if(G!==S0||done)return;
         if(["not-allowed","service-not-allowed","audio-capture","network"].includes(er)){done=true;stopR();if(er==="network"){MICERR="";say("Il faut internet pour que Pompon t'écoute.");document.getElementById("lhint").textContent=MICWHY.network;return}goSelf(er)}};
       r.onend=()=>{if(done||G!==S0)return;if(cur.trim()){acc=(acc+" "+cur).trim();cur=""}
