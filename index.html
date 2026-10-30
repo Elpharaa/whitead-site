@@ -3463,7 +3463,9 @@ function voiceWords(){if(VW)return VW;const seen=new Set();
   VW=WORLDS.map((w,wi)=>{const l=[...new Set([...themeWords(wi),...[1,2,3].flatMap(lv=>levelWords(wi,lv))])].filter(k=>(AUDIO[k]||AIDX[k])&&!seen.has(k));l.forEach(k=>seen.add(k));return l.sort((a,b)=>a.localeCompare(b,"fr"))});return VW}
 let SNDV={tab:"L",f:"all",q:""},RECW=null;
 const sylKeys=()=>{const o=new Set();Object.values(WSETS).forEach(S0=>(S0.syl||[]).forEach(x=>o.add("_sy_"+x)));Object.keys(AIDX).concat(Object.keys(AUDIO)).forEach(k=>{if(k.startsWith("_sy_"))o.add(k)});
-  const ex=k=>{const t=k.slice(4),e=wExample({k:"syl",t});return e?t+"… comme dans "+e:""};return [...o].sort((a,b)=>a.localeCompare(b,"fr")).map(k=>({key:k,lab:k.slice(4),tip:ex(k)}))};
+  const ex=k=>{const t=k.slice(4),e=wExample({k:"syl",t});return e?t+"… comme dans "+e:""};/* seulement de vraies syllabes (pas « bouil », « ille », « gne »… qui servent à l'écriture) */
+  const NOTSYL=new Set(["bouil","feuil","reil","rail","ille","un","gne","raye","tuya","voya"]);
+  return [...o].filter(k=>!NOTSYL.has(k.slice(4))).sort((a,b)=>a.localeCompare(b,"fr")).map(k=>({key:k,lab:k.slice(4),tip:ex(k)}))};
 function sndItems(){const L=SNDV.tab==="L"?SND_LETTERS.map(([k,tip])=>({key:"_ls_"+k,lab:k==="k"?"c k q":k,tip})):SNDV.tab==="S"?sylKeys():voiceWords()[SNDV.tab].map(k=>({key:k,lab:k}));
   const q=SNDV.q.trim().toLowerCase();return L.filter(x=>(!q||x.lab.toLowerCase().includes(q))&&(SNDV.f==="all"||(SNDV.f==="todo")!==REC(x.key)))}
 function sndRow(x){const mine=REC(x.key),pend=RECW&&RECW.k===x.key;
@@ -3489,8 +3491,8 @@ function soundsScreen(){
 }
 const sndMsg=h=>{const m=document.getElementById("sndmsg");if(m)m.innerHTML=h};
 function sndRedraw(k){const el=[...app.querySelectorAll(".vrow")].find(r=>r.dataset.k===k);if(!el)return null;
-  const x=SNDV.tab==="L"?(([kk,tip])=>({key:k,lab:kk==="k"?"c k q":kk,tip}))(SND_LETTERS.find(([kk])=>"_ls_"+kk===k)):{key:k,lab:k};
-  el.outerHTML=sndRow(x);const all=SNDV.tab==="L"?SND_LETTERS.map(([kk])=>"_ls_"+kk):voiceWords()[SNDV.tab];const c=app.querySelector(".scount b");if(c)c.textContent=all.filter(REC).length;
+  const x=SNDV.tab==="L"?(([kk,tip])=>({key:k,lab:kk==="k"?"c k q":kk,tip}))(SND_LETTERS.find(([kk])=>"_ls_"+kk===k)):SNDV.tab==="S"?(sylKeys().find(y=>y.key===k)||{key:k,lab:k.slice(4)}):{key:k,lab:k};
+  el.outerHTML=sndRow(x);const all=SNDV.tab==="L"?SND_LETTERS.map(([kk])=>"_ls_"+kk):SNDV.tab==="S"?sylKeys().map(y=>y.key):voiceWords()[SNDV.tab];const c=app.querySelector(".scount b");if(c)c.textContent=all.filter(REC).length;
   return [...app.querySelectorAll(".vrow")].find(r=>r.dataset.k===k)}
 async function sndAct(k,a,b){userActed=true;
   if(a==="play"){play(k);return}
