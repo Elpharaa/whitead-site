@@ -677,6 +677,8 @@ body.racing #mascot,body:has(.prog,.imgadmin,.sndadmin,.scadmin,.tcadmin,.board,
 .tgrp{display:flex;flex-direction:column;gap:6px;flex:1 1 300px}.tgrp>b{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#7a7461}.tgrp.adm{border-left:3px dashed #e3ddc8;padding-left:14px}
 .trow{display:flex;flex-wrap:wrap;gap:8px}.tbtn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:3px solid var(--ink);border-radius:14px;background:#fffdf6;font-weight:800;font-size:16px;color:var(--ink);box-shadow:0 3px 0 rgba(43,43,43,.18)}
 .tbtn .ic{width:26px;height:26px}.tbtn:hover{background:#fff6d8}@media (max-width:640px){.tgrp.adm{border-left:0;padding-left:0;border-top:3px dashed #e3ddc8;padding-top:8px}.tbtn{font-size:14px;padding:6px 10px}}
+.bdmodes{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:640px}.bdmode{display:flex;flex-direction:column;gap:2px;padding:14px;border:4px solid var(--ink);border-radius:20px;background:#fff;font-family:var(--display)}.bdmode b{font-size:22px}.bdmode small{font-family:var(--body);color:#6b6553}.bdmode[aria-pressed="true"]{background:#e6f6df;box-shadow:0 6px 0 #4f9f45}
+.bdprompt.gram{display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center}.bdprompt.gram .bdword.long{font-size:clamp(34px,5vw,60px)}.bdimg.many{display:inline-flex;gap:6px}.bdimg.many .ic{width:110px;height:110px}
 .micwhy{margin:4px auto 0;max-width:560px;text-align:center;font-size:14px;color:#8a5a12;background:#fff4dc;border-radius:12px;padding:6px 10px}.linkbtn{border:0;background:none;color:#2f5bd9;text-decoration:underline;font:inherit;font-weight:700}
 .lrd .ldet{color:#8a8470;font-weight:600;font-size:.62em;margin-right:.08em;white-space:pre}
 .wask{margin:0;text-align:center;font:800 clamp(18px,4.4vw,26px) var(--display);display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}.wex{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#6b6553}.wexp .ic{width:46px;height:46px;background:#fff;border:3px solid var(--ink);border-radius:12px;padding:3px}
@@ -3051,7 +3053,9 @@ function useTeacher(){SET_CLASS={};SET_STU={};best=LS("pompon-teacher-best")||{}
 function usePlayer(){} /* (ancien système local) */
 const AVATARS=["lapin","renard","ours","lion","cochon","grenouille","hibou","pieuvre","singe","poussin","phoque","chouette"];
 const PICS=["chat","pomme","étoile","voiture","fleur","soleil","poisson","maison","ballon"];
-const picRow=code=>(code||"").split("-").filter(Boolean).map(k=>`<span class="pc">${svg(ART(k))}</span>`).join("");
+/* les images secrètes ne changent jamais (même si on remplace l'image « chat » du site) */
+const PART=k=>ARTDEF(k)||ART(k);
+const picRow=code=>(code||"").split("-").filter(Boolean).map(k=>`<span class="pc">${svg(PART(k))}</span>`).join("");
 const KEYI=svg(`<circle cx="34" cy="50" r="18" fill="#ffd35c"/><circle cx="34" cy="50" r="6" fill="#fff"/><path d="M52 50 H88 M76 50 V62 M86 50 V60" fill="none" style="stroke-width:8"/>`);
 const head=(back)=>`<header><h1><span>Pompon</span> au CP</h1>${back?`<button class="back" id="cancel">← Retour</button>`:""}</header>`;
 function playerStars(p){let n=0;for(const v of Object.values(p.best||{}))n+=v;return n}
@@ -3097,9 +3101,9 @@ function picLogin(p){
   app.innerHTML=head(true)+`<section class="who"><span class="av big">${avFull(p.avatar,p.look)}</span><h2>${esc(p.name)}</h2>
     <p class="step" style="align-self:center">Touche tes 3 images secrètes</p>
     <div class="pslots">${[0,1,2].map(i=>`<span class="pslot" data-s="${i}"></span>`).join("")}</div><span class="err" id="perr"></span>
-    <div class="picpad">${PICS.map(k=>`<button class="pick" data-k="${k}" aria-label="${k}">${svg(ART(k))}</button>`).join("")}</div>
+    <div class="picpad">${PICS.map(k=>`<button class="pick" data-k="${k}" aria-label="${k}">${svg(PART(k))}</button>`).join("")}</div>
     <button class="adminbtn" id="undo">${UNDO}Effacer</button></section>`;
-  const slots=()=>app.querySelectorAll(".pslot").forEach((s,i)=>s.innerHTML=code[i]?svg(ART(code[i])):"");
+  const slots=()=>app.querySelectorAll(".pslot").forEach((s,i)=>s.innerHTML=code[i]?svg(PART(code[i])):"");
   document.getElementById("cancel").onclick=()=>rosterScreen();
   document.getElementById("undo").onclick=()=>{code.pop();slots()};
   app.querySelectorAll(".pick").forEach(b=>b.onclick=async()=>{if(code.length>=3)return;code.push(b.dataset.k);slots();
@@ -4211,7 +4215,7 @@ async function liveScreen(){LIVE_ON=true;document.getElementById("livebanner")?.
     if(L.phase==="end"||L.q<0){app.innerHTML=`<section class="game lvgame"><div class="lvwait">${pomponBig()}<h2>${L.phase==="end"?"Bravo la classe !":"Prêt ? Regarde le tableau !"}</h2></div><button class="btn alt" id="lvq">Revenir</button></section>`;
       document.getElementById("lvq").onclick=leave;if(L.phase==="end"){say("Bravo la classe !","_lv_end");setTimeout(()=>{if(!quit)leave()},6000)}return}
     const rev=L.phase==="reveal",mine=L.mine;
-    app.innerHTML=`<section class="game lvgame"><div class="lvtop"><span>${q.type==="word"?"Quel est le bon mot ?":q.type==="pic"?"Quelle est la bonne image ?":"Quel son entends-tu ?"}</span>${q.type==="sound"?`<button class="mini" id="lvhear" aria-label="Écouter">${SPEAKER}</button>`:""}</div>
+    app.innerHTML=`<section class="game lvgame"><div class="lvtop"><span>${q.type==="gram"?esc(q.ask):q.type==="word"?"Quel est le bon mot ?":q.type==="pic"?"Quelle est la bonne image ?":"Quel son entends-tu ?"}</span>${q.type==="sound"?`<button class="mini" id="lvhear" aria-label="Écouter">${SPEAKER}</button>`:""}</div>
      <div class="lvchoices">${q.choices.map((c,i)=>`<button class="lvc${mine===i?" mine":""}${rev&&q.answer===i?" good":""}${rev&&mine===i&&q.answer!==i?" bad":""}${mine!=null&&mine!==i&&!rev?" dim":""}" data-i="${i}" style="--sc:${SHC[i]}" ${mine!=null||rev?"disabled":""}>${SHAPES[i]}${choiceHTML(q,i)}</button>`).join("")}</div>
      <p class="lvmsg">${rev?(mine===q.answer?"Bravo ! Tu as trouvé !":mine==null?"Regarde la bonne réponse au tableau.":"Presque ! Regarde la bonne réponse."):mine!=null?"C'est noté ! Regarde le tableau.":""}</p></section>`;
     const h=document.getElementById("lvhear");if(h)h.onclick=()=>play(wkey(q.w));
@@ -4231,19 +4235,38 @@ function genLiveQs(wi,n){const ok=x=>/^[a-zàâäéèêëîïôöûùüçœ]+$/.
       const ch=shuffle([u,...others]);qs.push({type,w,choices:ch.map(uShow),answer:ch.indexOf(u)});continue}
     const t=pool[i%pool.length],ch=pick3(t,pool);if(ch.length<3)continue;qs.push({type:type==="sound"?"pic":type,w:t,choices:ch,answer:ch.indexOf(t)})}
   return qs}
+/* questions de grammaire pour le tableau (selon la période) */
+function genGramQs(wi,n){const allL=k=>[...new Set([1,2,3].flatMap(l=>(GRAM[k]&&GRAM[k][l])||[]))];
+  const nouns=shuffle([...new Set([1,2,3].flatMap(l=>readPool(wi,l,x=>isNoun(x)&&hasImg(x)&&hasA(wkey(x))&&!elided(x)&&/^[a-zàâçéèêëîïôûœ]+$/.test(x)&&!/([sxz]|al|eau|eu|au)$/.test(x))))]);
+  const verbs=shuffle(Object.keys(BANK.ALL).filter(x=>isVerb(x)&&/^(il|elle) /.test(x)&&ARTDEF(x)&&hasA(x)&&readable(x,wi,3)));
+  const T=wi>=3?[]:["genre"];if(wi>=1)T.push("nv");if(wi>=2)T.push("plN","ils");if(wi>=3)T.push("det","acc");if(wi>=4)T.push("ana");
+  const qs=[];let ni=0,vi=0;
+  for(let i=0;qs.length<n&&i<n*4;i++){const t=T[i%T.length];
+    if(t==="genre"&&nouns.length){const x=nouns[ni++%nouns.length];if(!GENDER[x])continue;const ch=["le","la"];qs.push({type:"gram",ask:"Le ou la ?",img:x,word:"… "+x,choices:ch,answer:GENDER[x]==="f"?1:0,say:wkey(x)})}
+    else if(t==="nv"){if(Math.random()<.5&&verbs.length){const v=verbs[vi++%verbs.length];qs.push({type:"gram",ask:"Nom ou verbe ?",img:v,word:v,choices:["Nom","Verbe"],answer:1,say:v})}
+      else if(nouns.length){const x=nouns[ni++%nouns.length];qs.push({type:"gram",ask:"Nom ou verbe ?",img:x,word:artOf(x)+x,choices:["Nom","Verbe"],answer:0,say:wkey(x)})}}
+    else if(t==="plN"&&nouns.length){const x=nouns[ni++%nouns.length],pl=Math.random()<.5,ch=shuffle([artOf(x)+x,"les "+x+"s"]);qs.push({type:"gram",ask:"Un ou plusieurs ?",img:x,many:pl,word:"",choices:ch,answer:ch.indexOf(pl?"les "+x+"s":artOf(x)+x)})}
+    else if(t==="ils"){const L=allL("PLUR");if(!L.length)continue;const v=L[Math.random()*L.length|0],p=["il","elle","ils","elles"][Math.random()*4|0],ch=shuffle([conj(v,"il"),conj(v,"ils")]);qs.push({type:"gram",ask:"Le bon verbe",pron:p,word:p+" …",choices:ch,answer:ch.indexOf(conj(v,p))})}
+    else if(t==="det"){const L=allL("DETN");if(!L.length)continue;const [x,g]=L[Math.random()*L.length|0],pl=Math.random()<.4,ok=pl?"des":g==="f"?"une":"un",ch=["un","une","des"];qs.push({type:"gram",ask:"Le bon déterminant",img:hasImg(x)?x:null,many:pl,word:"… "+(pl?x+"s":x),choices:ch,answer:ch.indexOf(ok)})}
+    else if(t==="acc"){const L=allL("ACC");if(!L.length)continue;const v=L[Math.random()*L.length|0],p=["nous","vous","ils"][Math.random()*3|0],ch=shuffle([conj(v,"nous"),conj(v,"vous"),conj(v,"ils")]);qs.push({type:"gram",ask:"Le bon verbe",pron:p,word:p+" …",choices:ch,answer:ch.indexOf(conj(v,p))})}
+    else if(t==="ana"){const L=allL("ANA");if(!L.length)continue;const s=L[Math.random()*L.length|0],K=toks(s).filter(o=>"NVDA".includes(o.t)&&o.t);if(!K.length)continue;const o=K[Math.random()*K.length|0];
+      const others=shuffle(["N","V","D","A"].filter(c=>c!==o.t)).slice(0,2),ch=shuffle([o.t,...others]);qs.push({type:"gram",ask:`« ${o.w} » est :`,word:sentText(s),choices:ch.map(c=>NATS[c].n),answer:ch.indexOf(o.t)})}}
+  return qs}
 async function boardScreen(cl,nKids){document.body.classList.add("home");window.scrollTo(0,0);G=null;
-  let wi=Math.max(0,WORLDS.findIndex((w,i)=>!periodDone(i)));if(wi<0)wi=0;
+  let wi=Math.max(0,WORLDS.findIndex((w,i)=>!periodDone(i)));if(wi<0)wi=0;let mode=LS("pompon-bdmode")||"voc";
   const setup=()=>{app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><h1>Jouer au tableau</h1><span></span></header>
     <section class="who bdsetup"><div class="bdhero">${pomponBig()}<p>Mets cette page au <b>vidéoprojecteur</b>. Sur les tablettes, un gros bouton « Pompon t'appelle au tableau ! » apparaît : les élèves répondent sur leur tablette.</p></div>
      <div class="ptabs">${WORLDS.map((x,i)=>`<button class="ptab" data-w="${i}" aria-pressed="${i===wi}" style="--c:${x.c};--on:${x.on}">${x.p} · ${x.name.replace(/^(La |Le )/,"")}</button>`).join("")}</div>
+     <div class="bdmodes"><button class="bdmode" data-m="voc" aria-pressed="${mode==="voc"}"><b>Vocabulaire</b><small>images, mots et sons</small></button><button class="bdmode" data-m="gram" aria-pressed="${mode==="gram"}"><b>Grammaire</b><small>le/la, nom/verbe, pluriel… selon la période</small></button></div>
      <button class="btn big1" id="bdgo" style="--c:#4f9f45">▶ Commencer (8 questions)</button><span class="err" id="bde"></span></section>`;
     document.getElementById("back").onclick=()=>studentsScreen();
     app.querySelectorAll(".ptab").forEach(b=>b.onclick=()=>{wi=+b.dataset.w;setup()});
+    app.querySelectorAll(".bdmode").forEach(b=>b.onclick=()=>{mode=b.dataset.m;LS("pompon-bdmode",mode);setup()});
     document.getElementById("bdgo").onclick=()=>run().catch(e=>{document.getElementById("bde").textContent="Impossible de lancer le jeu ("+e.message+")."})};
   const run=async()=>{
     await tq(`/rest/v1/class_live?class_id=eq.${cl.id}&active=eq.true`,{method:"PATCH",body:{active:false}}).catch(()=>{});
     const r=await tq("/rest/v1/class_live",{method:"POST",prefer:"return=representation",body:{class_id:cl.id,q:-1,phase:"wait"}});const id=(Array.isArray(r)?r[0]:r).id;
-    const qs=genLiveQs(wi,8),w=WORLDS[wi];let qi=-1,energy=0,timer=null,poll=null,closed=false,ansN=0;
+    const qs=mode==="gram"?genGramQs(wi,8):genLiveQs(wi,8),w=WORLDS[wi];let qi=-1,energy=0,timer=null,poll=null,closed=false,ansN=0;
     const patch=b=>tq(`/rest/v1/class_live?id=eq.${id}`,{method:"PATCH",body:{...b,updated_at:new Date().toISOString()}});
     const goal=async()=>{try{GOAL_N=+(await tq("/rest/v1/rpc/class_goal_now",{method:"POST",body:{p_class:cl.id}}))||0}catch(e){}};
     const close=async()=>{closed=true;clearInterval(poll);clearTimeout(timer);try{await patch({active:false})}catch(e){}studentsScreen()};
@@ -4254,12 +4277,13 @@ async function boardScreen(cl,nKids){document.body.classList.add("home");window.
     const show=async()=>{qi++;if(qi>=qs.length){await patch({phase:"end",energy});await goal();frame(`<div class="bdend">${pomponBig()}<h2>Bravo la classe !</h2><p>${energy} bonnes réponses pendant le jeu</p><button class="btn big1" id="bdfin" style="--c:#4f9f45">Terminer</button></div>`);
         say("Bravo la classe !","_lv_end");document.getElementById("bdfin").onclick=close;return}
       const q=qs[qi];await patch({q:qi,phase:"q",question:q,energy});ansN=0;let left=25;
-      const prompt=q.type==="word"?`<div class="bdprompt"><span class="bdimg">${svg(ART(q.w))}</span></div>`:q.type==="pic"?`<div class="bdprompt"><span class="bdword">${esc(q.w)}</span></div>`:`<div class="bdprompt"><span class="bdimg">${svg(ART(q.w))}</span><button class="mini" id="bdhear">${SPEAKER}</button></div>`;
-      frame(`<h2 class="bdask">${q.type==="word"?"Quel est le bon mot ?":q.type==="pic"?"Quelle est la bonne image ?":"Quel son entends-tu dans ce mot ?"}</h2>${prompt}
+      const gp=x=>`<span class="bdimg${q.many?" many":""}">${q.many?[0,1,2].map(()=>svg(ART(x))).join(""):svg(ART(x))}</span>`;
+      const prompt=q.type==="gram"?`<div class="bdprompt gram">${q.img?gp(q.img):""}${q.pron?`<span class="bdimg">${PRONPIC(q.pron)}</span>`:""}${q.word?`<span class="bdword${q.word.length>14?" long":""}">${esc(q.word)}</span>`:""}</div>`:q.type==="word"?`<div class="bdprompt"><span class="bdimg">${svg(ART(q.w))}</span></div>`:q.type==="pic"?`<div class="bdprompt"><span class="bdword">${esc(q.w)}</span></div>`:`<div class="bdprompt"><span class="bdimg">${svg(ART(q.w))}</span><button class="mini" id="bdhear">${SPEAKER}</button></div>`;
+      frame(`<h2 class="bdask">${q.type==="gram"?esc(q.ask):q.type==="word"?"Quel est le bon mot ?":q.type==="pic"?"Quelle est la bonne image ?":"Quel son entends-tu dans ce mot ?"}</h2>${prompt}
         <div class="bdchoices">${q.choices.map((c,i)=>`<div class="bdc" style="--sc:${SHC[i]}">${SHAPES[i]}${choiceHTML(q,i)}<span class="bdn" data-i="${i}"></span></div>`).join("")}</div>
         <div class="bdfoot"><span class="bdcount" id="bdcount">0 / ${nKids} ont répondu</span><span class="bdtime" id="bdtime">${left}</span><button class="btn" id="bdrev" style="--c:#2f8fc4">Montrer la réponse</button></div>`);
       const hear=document.getElementById("bdhear");if(hear)hear.onclick=()=>play(wkey(q.w));
-      play(q.type==="word"?"_lv_word":q.type==="pic"?"_lv_pic":"_lv_sound",()=>{if(q.type!=="word")setTimeout(()=>play(wkey(q.w)),200)});
+      if(q.type==="gram"){if(q.say&&hasA(q.say))play(q.say)}else play(q.type==="word"?"_lv_word":q.type==="pic"?"_lv_pic":"_lv_sound",()=>{if(q.type!=="word")setTimeout(()=>play(wkey(q.w)),200)});
       const reveal=async()=>{clearInterval(poll);clearInterval(timer);let A=[];try{A=await tq(`/rest/v1/class_live_answers?live_id=eq.${id}&q=eq.${qi}&select=choice,ok`)}catch(e){}
         const okN=A.filter(a=>a.ok).length;energy+=okN;await patch({phase:"reveal",energy});await goal();
         const per=[0,1,2].map(i=>A.filter(a=>a.choice===i).length);
