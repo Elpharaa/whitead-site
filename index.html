@@ -1737,9 +1737,11 @@ const REPLAY=svg(`<path d="M74 34 A30 30 0 1 0 80 56" fill="none" style="stroke-
 const GSETS={ferme:[1,2,3,17,14,4,5],foret:[1,2,3,14,15,6,5],montagne:[1,2,3,14,7,8,5],savane:[1,2,3,14,9,10,5],mer:[1,2,3,14,16,11,5]};
 const gamesOf=(wi,hide=S().hide)=>{const g=GSETS[WORLDS[wi].id],v=g.filter(k=>!hide.includes(k));return v.length?v:g};
 /* le chemin : tous les jeux du niveau 1, puis du niveau 2, puis du niveau 3 */
-const pathOf=(wi,hide)=>LV.flatMap(l=>gamesOf(wi,hide).map(k=>({wi,l,k})));
+/* « Image et phrase » en période 1 : seulement au dernier niveau, et seulement avec les scènes de l'enseignant */
+const gameIn=(wi,k,l)=>!(k===14&&WORLDS[wi].id==="ferme"&&(l!==LV[LV.length-1]||!SCENES.some(x=>x.period==="ferme")));
+const pathOf=(wi,hide)=>LV.flatMap(l=>gamesOf(wi,hide).filter(k=>gameIn(wi,k,l)).map(k=>({wi,l,k})));
 const nodeDone=n=>(best[bkey(WORLDS[n.wi],n.k,n.l)]||0)>0;
-const levelDone=(wi,l)=>gamesOf(wi).every(k=>(best[bkey(WORLDS[wi],k,l)]||0)>0);
+const levelDone=(wi,l)=>gamesOf(wi).filter(k=>gameIn(wi,k,l)).every(k=>(best[bkey(WORLDS[wi],k,l)]||0)>0);
 function levelOpen(wi,l){const p=me();return (p&&p.unlockAll)||l===1||levelDone(wi,l-1)}
 const periodDone=wi=>levelDone(wi,4);
 function periodOpen(wi){const p=me();return (p&&p.unlockAll)||wi===0||wi<S().upTo||periodDone(wi-1)}
@@ -1788,11 +1790,11 @@ function periodMap(wi){
   let row=1,html="";
   for(const l of LV){const op=levelOpen(wi,l);
     /* plus de bandeau « Niveau 1, 2… » sur la carte : un seul chemin continu (les niveaux restent visibles dans la page Programme) */
-    P.forEach((n,j)=>{if(n.l!==l)return;const q=j-(l-1)*ng,r=Math.floor(q/3),pos=r%2?2-q%3:q%3;
+    P.forEach((n,j)=>{if(n.l!==l)return;const q=P.slice(0,j).filter(m=>m.l===l).length,r=Math.floor(q/3),pos=r%2?2-q%3:q%3;
       const lk=!nodeOpen(wi,j),s=best[bkey(w,n.k,n.l)]||0;
       html+=`<div class="nwrap" style="grid-row:${row+r};grid-column:${1+pos*2}/${3+pos*2}"><button class="node${lk?" locked":""}${s?" done":""}${j===cur?" cur":""}" data-j="${j}" aria-label="${GSAY[n.k]}${lk?" (bloqué)":""}">${lk?LOCKI:GICON[n.k]}</button>
         ${j===cur?`<span class="me">${myAv()}</span>`:""}<span class="nst">${lk?"":starRow(s)}</span></div>`});
-    row+=Math.ceil(ng/3)}
+    row+=Math.ceil(P.filter(m=>m.l===l).length/3)}
   app.innerHTML=`<section class="pmap" style="--c:${w.c};--on:${w.on}">
    <header class="maphead"><button class="back ico" id="back" aria-label="Retour aux périodes">${MAPI}</button>
     <span class="ptitle"><span class="rnum">${w.p}</span>${svg(WART(w.id))}<b class="pnm">Période ${w.p}</b></span>
@@ -2592,6 +2594,7 @@ const PHRSETS={"ferme": [{"img": "loup", "opts": ["Le loup rit.", "La fée rit."
 function startPhr(wi){const fixed=(PHRSETS[WORLDS[wi].id]||[]).filter(it=>hasA("_ph_"+it.opts[it.ok]));
   const mix=it=>{const o=shuffle(it.opts.map((t,i)=>[t,i===it.ok]));return {...it,opts:o.map(x=>x[0]),ok:o.findIndex(x=>x[1])}};
   const mine=shuffle(SCENES.filter(x=>x.period===WORLDS[wi].id)).map(x=>mix({src:x.image,sid:x.id,opts:x.sentences,ok:x.answer}));
+  if(WORLDS[wi].id==="ferme"&&mine.length){gStart(14,wi,{list:mine.slice(0,Math.max(NQ(14),Math.min(mine.length,NQMAX[14])))});return}
   if(mine.length){const L=[...mine,...shuffle(fixed).map(mix)].slice(0,Math.max(NQ(14),Math.min(mine.length,NQMAX[14])));gStart(14,wi,{list:shuffle(L)});return}
   if(fixed.length>=3){gStart(14,wi,{list:shuffle(fixed).slice(0,NQ(14)).map(it=>{const o=shuffle(it.opts.map((t,i)=>[t,i===it.ok]));return {img:it.img,opts:o.map(x=>x[0]),ok:o.findIndex(x=>x[1])}})});return}
   const preds=phrPreds(wi);
@@ -3191,7 +3194,7 @@ const GNAME={17:"Compter les mots",14:"Image et phrase",15:"Mots dans l'ordre",1
 /* où en est un élève (à partir de ses étoiles) */
 function whereIs(pr,hide=[]){const has=(w,k,l)=>(pr[w.id+SUF[k]+"@"+l]||0)>0;
   const per=WORLDS.map((w,wi)=>{const P=pathOf(wi,hide),done=P.filter(n=>has(w,n.k,n.l)).length;
-    const lv=LV.map(l=>gamesOf(wi,hide).every(k=>has(w,k,l)));return {done,total:P.length,lv,next:P.find(n=>!has(w,n.k,n.l))}});
+    const lv=LV.map(l=>gamesOf(wi,hide).filter(k=>gameIn(wi,k,l)).every(k=>has(w,k,l)));return {done,total:P.length,lv,next:P.find(n=>!has(w,n.k,n.l))}});
   let cur=per.findIndex(p=>p.done<p.total);if(cur<0)cur=4;
   const n=per[cur].next;const stars=Object.values(pr).reduce((a,b)=>a+(+b||0),0);
   return {per,cur,stars,txt:n?`Période ${cur+1} · ${LEVELS[n.l]} · ${GNAME[n.k]}`:"Tout est fini !"}}
