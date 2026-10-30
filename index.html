@@ -2740,9 +2740,12 @@ function showMemo(kind,w,done){document.querySelectorAll(".memo").forEach(x=>x.r
    <div class="mbtns"><button class="btn alt" id="mre" hidden>Revoir</button><button class="btn" id="mgo">C'est parti !</button></div></div>`;
   document.body.appendChild(ov);
   const scene=ov.querySelector(".scene");
+  let tries=0;
   const run=()=>{scene.classList.remove("go");void scene.offsetWidth;
     getBuf(sc.key).then(b=>{scene.style.setProperty("--d",b.duration+"s");scene.classList.add("go");play(sc.key,()=>{ov.querySelector("#mre").hidden=false})})
-     .catch(()=>{scene.classList.add("go");ov.querySelector("#mre").hidden=false})};
+     .catch(()=>{/* le son du mémo n'est pas encore arrivé (connexion lente) : on réessaie un peu plus tard */
+       if(tries++<3&&ov.isConnected){setTimeout(()=>{if(ov.isConnected)run()},2500);return}
+       scene.classList.add("go");ov.querySelector("#mre").hidden=false})};
   const close=()=>{stopVoice();ov.remove();done&&done()};
   ov.querySelector("#mgo").onclick=close;ov.querySelector("#mskip").onclick=close;
   ov.querySelector("#mre").onclick=()=>{ov.querySelector("#mre").hidden=true;run()};
