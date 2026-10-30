@@ -664,6 +664,25 @@ body.racing #mascot,body:has(.prog,.imgadmin,.sndadmin,.board,.bdsetup,.tlist,.s
 @keyframes tapfx{0%{scale:1}28%{scale:.9}62%{scale:1.09}100%{scale:1}}
 .spark{position:fixed;z-index:999;pointer-events:none;font-size:18px;line-height:1;color:var(--sc,#ffcc33);text-shadow:0 1px 0 rgba(0,0,0,.15)}
 @media (prefers-reduced-motion:reduce){.tapfx{animation:none}.spark{display:none}}
+/* ---- téléphone : tout tient dans l'écran, Pompon plus discret ---- */
+.memo{grid-template-columns:minmax(0,1fr)}.mcard{justify-self:center;min-width:0}.mcard>*{flex-shrink:0}.mex{flex-wrap:wrap}.mex>*{min-width:0}
+.ans{min-width:0}
+#mascot{pointer-events:none}#mascot svg{pointer-events:auto}.bubble.fade{pointer-events:none}
+@media (max-width:560px){
+  #mascot svg{width:70px}
+  .bubble{font-size:15px;padding:7px 11px;margin-bottom:40px;border-width:3px;border-radius:16px 16px 16px 4px;max-width:250px}
+  main{padding-block:10px 120px;gap:14px}
+  .periods{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}.pcard2{grid-column:span 2;padding:12px 4px 10px;gap:4px;border-width:4px;border-radius:22px;box-shadow:0 6px 0 var(--c)}
+  .pcard2:nth-child(4){grid-column:2/4}.pcard2:nth-child(5){grid-column:4/6}.pcard2.locked{box-shadow:0 6px 0 #b9b39b}
+  .pnum{width:28px;height:28px;font-size:16px;border-width:3px;top:6px;left:6px}.ppic{width:21vw;height:21vw}.pname{font-size:15px}
+  .padlock .ic{width:40px;height:40px}
+  .wcard{padding:10px 14px;gap:10px;border-width:4px;border-radius:22px}.wcard b{font-size:20px}.wci .ic,.lcardh .wci .ic{width:44px;height:44px}
+  .qhead{border-radius:22px;padding:6px 12px}.qhead .tag{font-size:15px;padding:2px 12px}.qhead b{font-size:18px}
+  .answers.a3{grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px}.answers.a3:has(.vb){grid-template-columns:1fr 1fr}.answers.a3:has(.vb) .ans:last-child:nth-child(odd){grid-column:1/-1}.answers.a3 .ans{padding:10px 6px}
+  .mex.pal{grid-template-columns:repeat(3,1fr)}.mcard{padding:12px;gap:8px;border-radius:22px}.mtitle{font-size:19px}.msub{font-size:15px}
+  .wkind{padding:14px 10px}.wkind b{font-size:22px}.wki .ic{width:44px;height:44px}
+  .lrd{padding:16px 18px}
+}
 </style>
 
 <div id="meadow" aria-hidden="true">
@@ -686,6 +705,21 @@ body.racing #mascot,body:has(.prog,.imgadmin,.sndadmin,.board,.bdsetup,.tlist,.s
 </svg>
 </div>
 
+<div id="splash" style="position:fixed;inset:0;z-index:999;background:#fffdf6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;transition:opacity .5s">
+ <svg viewBox="0 0 330 130" style="width:min(80vw,440px);height:auto;overflow:visible" aria-hidden="true">
+  <path d="M14 104H306" stroke="#e2534a" stroke-width="2" opacity=".35"/><path d="M14 60H306" stroke="#2f8fc4" stroke-width="2" opacity=".3"/>
+  <path id="splp" d="M16 100 C34 100 40 96 46 88 C60 70 66 40 56 40 C46 40 48 70 62 92 C68 100 78 100 86 88 C100 70 106 40 96 40 C86 40 88 70 102 92 C108 100 118 100 126 88 C140 70 146 40 136 40 C126 40 128 70 142 92 C148 100 158 100 166 88 C180 70 186 40 176 40 C166 40 168 70 182 92 C188 100 198 100 206 88 C220 70 226 40 216 40 C206 40 208 70 222 92 C228 100 238 100 246 88 C260 70 266 40 256 40 C246 40 248 70 262 92 C268 100 278 100 286 88 C292 80 298 82 304 84" fill="none" stroke="#2f5bd9" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <g id="splpen"><g transform="rotate(-40)"><path d="M0 0 L8 -5 L8 5Z" fill="#f2c9a0" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/><path d="M0 0 L3 -1.8 L3 1.8Z" fill="#2b2b2b"/><rect x="8" y="-5" width="40" height="10" fill="#ffd34d" stroke="#2b2b2b" stroke-width="2.5"/><rect x="48" y="-5" width="8" height="10" fill="#bcbcbc" stroke="#2b2b2b" stroke-width="2.5"/><rect x="56" y="-5" width="9" height="10" rx="3" fill="#f28ca0" stroke="#2b2b2b" stroke-width="2.5"/></g></g>
+ </svg>
+ <b id="splt" style="font:800 clamp(28px,7vw,44px) system-ui,sans-serif;color:#7cb82f;opacity:0;transition:opacity .6s">Pompon <span style="color:#4a7a1a">au CP</span></b>
+</div>
+<script>(function(){var p=document.getElementById("splp"),pen=document.getElementById("splpen"),L=p.getTotalLength(),T=2600,t0=performance.now();
+ p.style.strokeDasharray=L;p.style.strokeDashoffset=L;
+ function f(now){var k=Math.min(1,(now-t0)/T),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2,pt=p.getPointAtLength(L*e);p.style.strokeDashoffset=L*(1-e);pen.setAttribute("transform","translate("+pt.x+","+pt.y+")");
+  if(k<1)requestAnimationFrame(f);else document.getElementById("splt").style.opacity=1}
+ requestAnimationFrame(f);var t1=Date.now();
+ window.hideSplash=function(){var d=Math.max(0,3500-(Date.now()-t1));setTimeout(function(){var s=document.getElementById("splash");if(!s)return;s.style.opacity=0;s.style.pointerEvents="none";setTimeout(function(){s.remove()},550)},d)};
+ setTimeout(function(){window.hideSplash()},9000);})();</script>
 <main id="app"></main>
 
 <div id="mascot">
@@ -1647,7 +1681,7 @@ const sndWin=()=>[523,659,784,1047,784,1047].forEach((f,i)=>tone(f,i*.13,.22,"tr
 
 let lastLine=null;
 function say(text,key,onend){
-  bubble.textContent=text;bubble.classList.remove("fade");clearTimeout(say.t);say.t=setTimeout(()=>{if(G||document.getElementById("map"))bubble.classList.add("fade")},6000);mascot.classList.remove("talk");void mascot.offsetWidth;mascot.classList.add("talk");
+  bubble.textContent=text;bubble.classList.remove("fade");clearTimeout(say.t);say.t=setTimeout(()=>{if(G||document.getElementById("map")||innerWidth<=560)bubble.classList.add("fade")},innerWidth<=560?4500:6000);mascot.classList.remove("talk");void mascot.offsetWidth;mascot.classList.add("talk");
   lastLine=[text,key];if(key)play(key,onend);else onend&&onend();
 }
 document.getElementById("pompon").addEventListener("click",()=>{if(lastLine)say(...lastLine)});
@@ -2579,7 +2613,7 @@ function memoScene(kind,w){
    html:`<div class="mrows"><div class="mrow m" style="--a:m4a">${svg(ART(m))}<span><b>le</b> ${m}</span><span class="chip">masculin</span></div>
     <div class="mrow f" style="--a:m4b">${svg(ART(f))}<span><b>la</b> ${f}</span><span class="chip">féminin</span></div></div>`};
 }
-function showMemo(kind,w,done){
+function showMemo(kind,w,done){document.querySelectorAll(".memo").forEach(x=>x.remove());
   const sc=memoScene(kind,w),ov=document.createElement("div");
   ov.className="memo";ov.style.setProperty("--c",w.c);ov.style.setProperty("--on",w.on);
   ov.innerHTML=`<div class="mcard" role="dialog" aria-label="Mémo"><div class="mtop"><span class="tag">${PLAYI}Mémo</span><button class="back" id="mskip">Passer</button></div>
@@ -3701,7 +3735,8 @@ function writeHome(wi){
 function writePick(wi,k,last){const items=writeItems(wi),L=items.map((it,i)=>[it,i]).filter(([it])=>it.k===k);
   const todo=L.filter(([it])=>(best[wKey(wi,it.t)]||0)<2&&it.t!==last),pool=todo.length?todo:L.filter(([it])=>it.t!==last);
   const pick=(pool.length?pool:L)[Math.random()*(pool.length||L.length)|0];writeItem(wi,pick[1])}
-function dotsMode(){const d=S().dots||"choix";if(d==="oui")return true;if(d==="non")return false;const v=LS("pompon-wdots");return v===true}
+/* pointillés : toujours éteints au départ ; l'élève peut les allumer pour l'exercice en cours seulement */
+function dotsMode(){return (S().dots||"choix")==="oui"}
 function writeItem(wi,i){marelleReady().then(()=>writeItem2(wi,i))}
 function writeItem2(wi,i){
   const items=writeItems(wi),it=items[i];if(!it)return writeHome(wi);window.WCUR=it;
@@ -3736,7 +3771,7 @@ function writeItem2(wi,i){
    <div class="wres" id="wres"></div></section>`;
   const board=document.getElementById("wboard"),can=document.getElementById("wcan"),cx2=can.getContext("2d"),dotg=document.getElementById("wdotg"),animg=document.getElementById("wanim");
   const toU=e=>{const r=can.getBoundingClientRect();return [vx+(e.clientX-r.left)/r.width*vw,YTOP-(e.clientY-r.top)/r.height*VH]};
-  const fit=()=>{const pw=board.parentElement.clientWidth,bw=Math.min(pw,window.innerHeight*0.6*vw/VH);board.style.width=bw+"px";board.style.height=(bw*VH/vw)+"px";
+  const fit=()=>{const pw=board.parentElement.clientWidth-10,bw=Math.min(pw,window.innerHeight*0.6*vw/VH);board.style.width=bw+"px";board.style.height=(bw*VH/vw)+"px";
     const r=board.getBoundingClientRect(),dpr=window.devicePixelRatio||1;can.width=Math.round(r.width*dpr);can.height=Math.round(r.height*dpr);redraw()};
   const toP=([x,y])=>[(x-vx)/vw*can.width,(YTOP-y)/VH*can.height];
   function redraw(){cx2.clearRect(0,0,can.width,can.height);cx2.lineCap="round";cx2.lineJoin="round";cx2.strokeStyle=checked?"rgba(47,91,217,.45)":"#2f5bd9";cx2.lineWidth=Math.max(3,can.width/vw*34);
@@ -3757,7 +3792,7 @@ function writeItem2(wi,i){
   const playIt=()=>{if(!snd)return;if(ex&&hasA("_w_comme"))play(snd,()=>setTimeout(()=>{if(G===myG)play("_w_comme",()=>{if(G===myG)play(wkey(ex))})},250));else play(snd)};
   document.getElementById("wplay").onclick=playIt;
   document.getElementById("back").onclick=()=>{stopVoice();window.removeEventListener("resize",fit);G=null;writeHome(wi)};
-  const dB=document.getElementById("wdots");if(dB)dB.onclick=()=>{dots=!dots;LS("pompon-wdots",dots);dB.setAttribute("aria-pressed",dots);drawDots();document.getElementById("wshow").hidden=!dots;if(dots)say("Repasse sur les pointillés. Commence au point vert.","_w_dots")};
+  const dB=document.getElementById("wdots");if(dB)dB.onclick=()=>{dots=!dots;dB.setAttribute("aria-pressed",dots);drawDots();document.getElementById("wshow").hidden=!dots;if(dots)say("Repasse sur les pointillés. Commence au point vert.","_w_dots")};
   document.getElementById("wshow").onclick=()=>{stopVoice();say("Regarde bien comment on trace.","_w_model");animateModel(M,"#e2534a")};
   document.getElementById("wclear").onclick=()=>{if(checked){checked=false;document.getElementById("wres").innerHTML="";animg.innerHTML="";document.getElementById("wmg").innerHTML="";document.getElementById("wcheck").hidden=false}ink=[];redraw();drawDots()};
   document.getElementById("wcheck").onclick=()=>{
@@ -3878,7 +3913,7 @@ async function boardScreen(cl,nKids){document.body.classList.add("home");window.
     const close=async()=>{closed=true;clearInterval(poll);clearTimeout(timer);try{await patch({active:false})}catch(e){}studentsScreen()};
     const T=goalTarget2(cl);
     const frame=inner=>{app.innerHTML=`<section class="board" style="--c:${w.c}"><div class="bdtop"><button class="back ico" id="bdx" aria-label="Arrêter">${MAPI}</button><b>Jouer au tableau · ${w.name}</b><span class="bdq">${qi>=0&&qi<qs.length?`Question ${qi+1} / ${qs.length}`:""}</span></div>
-      <div class="bdmain">${inner}</div><div class="bddrag">${pomponBig()}<b class="bdscore">${STAR_ON} ${energy}</b><small>bonnes réponses de la classe</small></div></section>`;
+      <div class="bdmain">${inner}</div><div class="bddrag">${pomponBig()}<b class="bdscore">${energy}</b><small>bonne${energy>1?"s":""} réponse${energy>1?"s":""} de la classe</small></div></section>`;
       document.getElementById("bdx").onclick=close};
     const show=async()=>{qi++;if(qi>=qs.length){await patch({phase:"end",energy});await goal();frame(`<div class="bdend">${pomponBig()}<h2>Bravo la classe !</h2><p>${energy} bonnes réponses pendant le jeu</p><button class="btn big1" id="bdfin" style="--c:#4f9f45">Terminer</button></div>`);
         say("Bravo la classe !","_lv_end");document.getElementById("bdfin").onclick=close;return}
@@ -3931,7 +3966,7 @@ async function boot(){
     catch(e){CUSTOM=LS("pompon-images-cache")||{};useStudent({id:STU.id,name:STU.name,avatar:STU.av,progress:{},lvl:1});lastWi=null;periodsScreen();netBadge(true);return}}
   CLASS_CODE?rosterScreen():classScreen();
 }
-boot();
+boot().catch(()=>{}).finally(()=>window.hideSplash&&window.hideSplash());
 lastLine=[bubble.textContent,"_qui"];
 </script>
 
