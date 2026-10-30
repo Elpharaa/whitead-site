@@ -424,7 +424,7 @@ body.home h1{text-shadow:0 3px 0 #fdfbfc}
 @keyframes m5l1{0%,17%{opacity:0}19%,100%{opacity:1}}@keyframes m5l2{0%,35%{opacity:0}37%,100%{opacity:1}}@keyframes m5l3{0%,53%{opacity:0}55%,100%{opacity:1}}@keyframes m5l4{0%,71%{opacity:0}73%,100%{opacity:1}}
 @media (max-width:560px){.track{height:58vh}.rpic{width:84px}.rpic .mini{width:36px;height:36px;right:-8px;bottom:-8px}}
 body:has(.wgame) #mascot{display:none}
-body.racing #mascot,body:has(.prog,.imgadmin,.sndadmin,.scadmin,.board,.bdsetup,.tlist,.sdetail,.setg,.cards,.report) #mascot{display:none}
+body.racing #mascot,body:has(.prog,.imgadmin,.sndadmin,.scadmin,.tcadmin,.board,.bdsetup,.tlist,.sdetail,.setg,.cards,.report) #mascot{display:none}
 .lchip{font-family:var(--body);font-weight:700;font-size:18px;letter-spacing:1px;white-space:nowrap}
 .lvltag .lchip{font-size:16px}
 .tile.txt mark,.gword mark{background:none;color:inherit;text-decoration:underline 4px;text-underline-offset:5px;text-decoration-color:var(--sun)}
@@ -672,6 +672,7 @@ body.racing #mascot,body:has(.prog,.imgadmin,.sndadmin,.scadmin,.board,.bdsetup,
 .sclist{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}.scitem{background:#fff;border:3px solid var(--ink);border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:6px}.scitem>img{width:100%;max-height:180px;object-fit:contain;border-radius:10px}
 .scitem ol{margin:0;padding-left:20px}.scitem li.ok{font-weight:800;color:#2d7a28}
 .mex .pp:has(.ic+.ic){display:inline-flex;gap:2px}.mex .pp:has(.ic+.ic) .ic{width:40px;height:40px}
+.tctext{width:100%;box-sizing:border-box;font:inherit;font-size:20px;line-height:1.5;padding:10px 14px;border:3px solid var(--ink);border-radius:14px;background:#fff}
 .micwhy{margin:4px auto 0;max-width:560px;text-align:center;font-size:14px;color:#8a5a12;background:#fff4dc;border-radius:12px;padding:6px 10px}.linkbtn{border:0;background:none;color:#2f5bd9;text-decoration:underline;font:inherit;font-weight:700}
 .lrd .ldet{color:#8a8470;font-weight:600;font-size:.62em;margin-right:.08em;white-space:pre}
 .wask{margin:0;text-align:center;font:800 clamp(18px,4.4vw,26px) var(--display);display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}.wex{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#6b6553}.wexp .ic{width:46px;height:46px;background:#fff;border:3px solid var(--ink);border-radius:12px;padding:3px}
@@ -1535,7 +1536,7 @@ const AIDX={"Lulu":[0],"_pf_aa":[0],"_pf_ae":[0],"_pf_af":[0,1,2,3,4],"_pf_afa":
 /* Voix enregistrées par les admins (table site_sounds). Par défaut : la voix de synthèse.
    On garde un petit index (mot → date) ; le son lui-même est téléchargé une fois puis gardé sur l'appareil (marche hors ligne). */
 let SIDX={};const VMEM={},VCACHE="pompon-voix";
-const REC=k=>!!SIDX[k];
+const REC=k=>!!SIDX[k]||(typeof TSND!=="undefined"&&!!k&&k.startsWith("_tc_")&&!!TSND[k]);
 const vreq=k=>new Request("./voix/"+encodeURIComponent(k)+"?v="+encodeURIComponent(SIDX[k]));
 const vopen=()=>window.caches?caches.open(VCACHE):Promise.reject(new Error("pas de cache"));
 async function recData(k){if(!SIDX[k])return null;const id=k+"@"+SIDX[k];if(VMEM[id])return VMEM[id];
@@ -1550,7 +1551,7 @@ async function prefetchVoices(){let c;try{c=await vopen()}catch(e){return}
       for(const r of rows){if(SIDX[r.key]===r.updated_at)await c.put(vreq(r.key),new Response(r.data))}}catch(e){return}}}
 /* expressions régulières : les vieilles tablettes (Safari avant 16.4) ne connaissent pas « (?<! … ) » : on l'enlève alors */
 const RXC={};function RX(s,f=""){const k=f+"|"+s;if(RXC[k])return RXC[k];let r;try{r=new RegExp(s,f)}catch(e){let x=s,y;do{y=x;x=x.replace(/\(\?<[=!](?:[^()]|\([^()]*\))*\)/g,"")}while(x!==y);r=new RegExp(x,f)}return RXC[k]=r}
-const hasA=k=>!!(REC(k)||AUDIO[k]||AIDX[k]);
+const hasA=k=>!!(REC(k)||AUDIO[k]||AIDX[k]||(typeof TSND!=="undefined"&&k&&k.startsWith("_tc_")&&TSND[k]));
 function loadBundle(b){if(!ALOAD[b])ALOAD[b]=fetch("audio/"+b+".json").then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(j=>{for(const k in j)if(!AUDIO[k])AUDIO[k]=j[k]}).catch(e=>{delete ALOAD[b];throw e});return ALOAD[b]}
 const loadPeriod=id=>{const b=ABUND.find(x=>x.startsWith(id+"-"));return b?loadBundle(b).catch(()=>{}):Promise.resolve()};
 function ensureAudio(k){if(AUDIO[k]||!AIDX[k])return Promise.resolve();const bs=AIDX[k].map(i=>ABUND[i]);const ok=bs.find(b=>ALOAD[b]);return loadBundle(ok||bs[0])}
@@ -1667,6 +1668,9 @@ function unlock(){userActed=true;const a=ctx();const b=a.createBuffer(1,1,22050)
 const buffers={};
 function b64ToBuf(d){const s=atob(d.split(",")[1]),u=new Uint8Array(s.length);for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i);return u.buffer}
 function getBuf(key){
+  if(key&&key.startsWith("_tc_")&&TSND[key]){const bk="#"+key+"@"+TSND[key];
+    if(!buffers[bk])buffers[bk]=tcSoundData(key).then(d=>{if(!d)throw new Error("absent");const a=ctx();return new Promise((res,rej)=>{const p=a.decodeAudioData(b64ToBuf(d),res,rej);if(p&&p.then)p.then(res,rej)})});
+    return buffers[bk].catch(e=>{delete buffers[bk];throw e})}
   if(REC(key)){const bk="~"+key+"@"+SIDX[key];
     if(!buffers[bk])buffers[bk]=recData(key).then(d=>{if(!d)throw new Error("absent");const a=ctx();return new Promise((res,rej)=>{const p=a.decodeAudioData(b64ToBuf(d),res,rej);if(p&&p.then)p.then(res,rej)})});
     return buffers[bk].catch(()=>{delete buffers[bk];if(AUDIO[key]||AIDX[key])return getBufSynth(key);throw new Error("son absent")})}
@@ -1761,7 +1765,7 @@ function periodsScreen(){
   document.body.classList.add("home");document.body.style.removeProperty("--pc");delete document.body.dataset.world;G=null;window.scrollTo(0,0);
   const p=me(),tot=WORLDS.reduce((s,w)=>s+worldStars(w),0);
   app.innerHTML=`<header class="maphead"><button class="player${p.admin?" adm":""}" id="who" aria-label="Mon coin"><span class="av">${myAv()}</span><b>${esc(p.name)}</b></button>
-    <h1><span>Pompon</span> au CP</h1>${p.admin?`<button class="adminbtn" id="studs">${svg(`<circle cx="34" cy="36" r="14" fill="#f2c9a0"/><path d="M12 84 Q14 56 34 56 Q54 56 56 84Z" fill="#2f8fc4"/><circle cx="68" cy="40" r="12" fill="#f2c9a0"/><path d="M50 84 Q52 60 68 60 Q86 60 88 84Z" fill="#e05a7a"/>`)}Élèves</button><button class="adminbtn" id="prog">${svg(`<rect x="16" y="10" width="68" height="80" rx="6" fill="#fff"/><path d="M28 30 H72 M28 46 H72 M28 62 H60" fill="none" style="stroke:#2f8fc4;stroke-width:6"/>`)}Programme</button>${SITE_ADMIN?`<button class="adminbtn" id="imgs">${svg(`<rect x="8" y="18" width="84" height="64" rx="8" fill="#fff"/><circle cx="32" cy="40" r="9" fill="#ffd35c"/><path d="M14 76 L40 52 L56 66 L70 54 L88 72 V76Z" fill="#8cc152"/>`)}Images</button><button class="adminbtn" id="scns">${svg(`<rect x="10" y="12" width="80" height="56" rx="8" fill="#fff"/><circle cx="34" cy="34" r="8" fill="#ffd35c"/><path d="M14 64 L38 44 L52 56 L66 46 L86 62 V64Z" fill="#8cc152"/><path d="M14 80 H86 M14 92 H64" fill="none" style="stroke:#2f8fc4;stroke-width:6;stroke-linecap:round"/>`)}Scènes</button><button class="adminbtn" id="snds">${svg(`<rect x="38" y="10" width="24" height="46" rx="12" fill="#e2534a"/><path d="M26 44 Q26 70 50 70 Q74 70 74 44 M50 70 V86 M36 88 H64" fill="none" style="stroke:#fff;stroke-width:6;stroke-linecap:round"/>`)}Voix</button>`:""}`:""}<div class="total" aria-label="${tot} étoiles">${STAR_ON} ${tot}</div></header>
+    <h1><span>Pompon</span> au CP</h1>${p.admin?`<button class="adminbtn" id="studs">${svg(`<circle cx="34" cy="36" r="14" fill="#f2c9a0"/><path d="M12 84 Q14 56 34 56 Q54 56 56 84Z" fill="#2f8fc4"/><circle cx="68" cy="40" r="12" fill="#f2c9a0"/><path d="M50 84 Q52 60 68 60 Q86 60 88 84Z" fill="#e05a7a"/>`)}Élèves</button><button class="adminbtn" id="tcbtn">${svg(`<rect x="14" y="10" width="72" height="80" rx="8" fill="#fff"/><path d="M26 30 H74 M26 46 H74 M26 62 H58" fill="none" style="stroke:#4f9f45;stroke-width:6;stroke-linecap:round"/><path d="M62 70 L84 48 L92 56 L70 78 L60 80Z" fill="#ffd34d"/>`)}Mes phrases</button><button class="adminbtn" id="prog">${svg(`<rect x="16" y="10" width="68" height="80" rx="6" fill="#fff"/><path d="M28 30 H72 M28 46 H72 M28 62 H60" fill="none" style="stroke:#2f8fc4;stroke-width:6"/>`)}Programme</button>${SITE_ADMIN?`<button class="adminbtn" id="imgs">${svg(`<rect x="8" y="18" width="84" height="64" rx="8" fill="#fff"/><circle cx="32" cy="40" r="9" fill="#ffd35c"/><path d="M14 76 L40 52 L56 66 L70 54 L88 72 V76Z" fill="#8cc152"/>`)}Images</button><button class="adminbtn" id="scns">${svg(`<rect x="10" y="12" width="80" height="56" rx="8" fill="#fff"/><circle cx="34" cy="34" r="8" fill="#ffd35c"/><path d="M14 64 L38 44 L52 56 L66 46 L86 62 V64Z" fill="#8cc152"/><path d="M14 80 H86 M14 92 H64" fill="none" style="stroke:#2f8fc4;stroke-width:6;stroke-linecap:round"/>`)}Scènes</button><button class="adminbtn" id="snds">${svg(`<rect x="38" y="10" width="24" height="46" rx="12" fill="#e2534a"/><path d="M26 44 Q26 70 50 70 Q74 70 74 44 M50 70 V86 M36 88 H64" fill="none" style="stroke:#fff;stroke-width:6;stroke-linecap:round"/>`)}Voix</button>`:""}`:""}<div class="total" aria-label="${tot} étoiles">${STAR_ON} ${tot}</div></header>
    <div class="periods">${WORLDS.map((w,wi)=>{const open=periodOpen(wi),done=periodDone(wi);
      return `<button class="pcard2${open?"":" locked"}${done?" done":""}" data-w="${wi}" style="--c:${w.c};--on:${w.on}" aria-label="Période ${w.p}${open?"":" (fermée)"}">
        <span class="pnum">${w.p}</span><span class="ppic">${svg(WART(w.id))}</span><span class="pname">Période ${w.p}</span>
@@ -1779,6 +1783,7 @@ function periodsScreen(){
   /* « Je lis à Pompon » retiré de l'accueil (reconnaissance vocale pas assez fiable) : le code reste pour plus tard */
   const sdb=document.getElementById("snds");if(sdb)sdb.onclick=()=>{stopVoice();soundsScreen()};
   const pb=document.getElementById("prog");if(pb)pb.onclick=()=>{stopVoice();programScreen()};
+  const tcb=document.getElementById("tcbtn");if(tcb)tcb.onclick=async()=>{stopVoice();try{await loadClasses()}catch(e){}await loadTCC();if(!TCUR){alert("Crée d'abord une classe dans « Élèves ».");return}contentScreen()};
   const sbn=document.getElementById("studs");if(sbn)sbn.onclick=()=>{stopVoice();studentsScreen()};
 }
 
@@ -2590,6 +2595,7 @@ function rDet(){const it=G.list[G.i];
   app.querySelectorAll(".ans").forEach(b=>b.onclick=()=>{if(!G||G.locked||b.classList.contains("bad"))return;
     if(b.dataset.o===it.d){b.classList.add("good");sndGood();document.getElementById("blank").textContent=it.d;document.getElementById("blank").classList.add("ok");app.querySelector(".bar i").style.width=((G.i+1)/G.n*100)+"%";gNext(it.d+" "+it.w)}else{gBad(b);const dk=it.pl?"_x_det_pl":it.g==="f"?"_x_det_f":"_x_det_m";sayChain([dk],{_x_det_pl:"Il y en a plusieurs : on met les, des ou ces.",_x_det_f:"Ce mot est féminin : on met la, une ou cette.",_x_det_m:"Ce mot est masculin : on met le, un ou ce."}[dk])}});
 }
+const sKey=t=>hasA(tcKey(t))?tcKey(t):hasA("_rd_"+t)?"_rd_"+t:null;
 /* ===== Image → la bonne phrase (toutes les périodes) : une image, trois phrases presque pareilles ===== */
 const capF=s=>s.charAt(0).toUpperCase()+s.slice(1);
 function phrPreds(wi){const id=WORLDS[wi].id,S0=[...(READT[id]||[]),...(READT["S_"+id]||[])],out=new Set();
@@ -2618,8 +2624,8 @@ function rPhr(){const it=G.list[G.i];
     else{gBad(b);if(it.sid)sayChain(["_x_phr_sc"],"Regarde bien l'image, et relis les phrases.");else sayChain(["_x_phr_no",wkey(it.img)],`Lis bien le nom dans la phrase. Sur l'image, c'est « ${artOf(it.img)}${it.img} ».`)}})}
 
 /* ===== Période 2 : remettre les mots dans l'ordre (étiquettes à faire glisser) ===== */
-function startOrd(wi){const id=WORLDS[wi].id,S0=[...new Set([...(READT[id]||[]),...(READT["S_"+id]||[])])].filter(s=>{const n=s.split(" ").length;return n>=3&&n<=6});
-  const list=easiest(S0,s=>s.length).slice(0,NQ(15)).map(s=>{const T=s.split(" ");let order;do{order=shuffle(T.map((t,i)=>i))}while(order.every((v,i)=>v===i)&&T.length>1);return {s,T,order,slot:T.map(()=>null),tries:0}});
+function startOrd(wi){const id=WORLDS[wi].id,mine=tcItems(15,wi).map(x=>x.t),S0=mine.length?mine:[...new Set([...(READT[id]||[]),...(READT["S_"+id]||[])])].filter(s=>{const n=s.split(" ").length;return n>=3&&n<=6});
+  const list=(mine.length?shuffle(S0):easiest(S0,s=>s.length)).slice(0,mine.length?Math.max(NQ(15),Math.min(mine.length,NQMAX[15])):NQ(15)).map(s=>{const T=s.split(" ");let order;do{order=shuffle(T.map((t,i)=>i))}while(order.every((v,i)=>v===i)&&T.length>1);return {s,T,order,slot:T.map(()=>null),tries:0}});
   gStart(15,wi,{list})}
 function rOrd(){const it=G.list[G.i];
   app.innerHTML=gSection(`<div class="qhead"><span class="tag">Lecture</span><b>Remets les mots dans l'ordre</b></div>
@@ -2629,7 +2635,7 @@ function rOrd(){const it=G.list[G.i];
   const place=(tile,slot)=>{if(slot.firstChild)pool.appendChild(slot.firstChild);slot.appendChild(tile);check()};
   const check=()=>{if(slots.some(s=>!s.firstChild))return;G.locked=true;
     const bad=slots.filter((s,i)=>it.T[+s.firstChild.dataset.t]!==it.T[i]);
-    if(!bad.length){slots.forEach(s=>s.firstChild.classList.add("good"));sndGood();app.querySelector(".bar i").style.width=((G.i+1)/G.n*100)+"%";gNext(hasA("_rd_"+it.s)?"_rd_"+it.s:null);return}
+    if(!bad.length){slots.forEach(s=>s.firstChild.classList.add("good"));sndGood();app.querySelector(".bar i").style.width=((G.i+1)/G.n*100)+"%";gNext(sKey(it.s));return}
     gBad(null);bad.forEach(s=>s.firstChild.classList.add("bad"));it.tries++;
     sayChain(["_x_ord_no"],"Ce n'est pas encore le bon ordre. Les étiquettes en rouge ne sont pas à leur place.",()=>{});
     setTimeout(()=>{if(!G||G.list[G.i]!==it)return;bad.forEach(s=>{const t=s.firstChild;if(t){t.classList.remove("bad");pool.appendChild(t)}});G.locked=false},1300)};
@@ -2646,7 +2652,7 @@ function rOrd(){const it=G.list[G.i];
     window.addEventListener("pointermove",mv);window.addEventListener("pointerup",up);window.addEventListener("pointercancel",up)})})}
 
 /* ===== Période 5 : séparer les mots collés ===== */
-function startSeg(wi){const id=WORLDS[wi].id,S0=[...new Set([...(READT[id]||[]),...(READT["S_"+id]||[])])].filter(s=>{const n=s.split(" ").length;return n>=3&&n<=7});
+function startSeg(wi){const id=WORLDS[wi].id,mine=tcItems(16,wi).map(x=>x.t),S0=mine.length?mine:[...new Set([...(READT[id]||[]),...(READT["S_"+id]||[])])].filter(s=>{const n=s.split(" ").length;return n>=3&&n<=7});
   gStart(16,wi,{list:shuffle(S0).slice(0,NQ(16)).map(s=>({s,tries:0}))})}
 function rSeg(){const it=G.list[G.i],W=it.s.split(" "),letters=[...W.join("")],cuts=new Set();let k=0;W.slice(0,-1).forEach(w=>{k+=[...w].length;cuts.add(k)});
   const on=new Set();
@@ -2656,15 +2662,15 @@ function rSeg(){const it=G.list[G.i],W=it.s.split(" "),letters=[...W.join("")],c
   app.querySelectorAll(".sgap").forEach(b=>b.onclick=()=>{if(!G||G.locked)return;const g=+b.dataset.g;on.has(g)?on.delete(g):on.add(g);b.classList.toggle("on",on.has(g));app.querySelectorAll(".sgap").forEach(x=>x.classList.remove("bad","miss"))});
   document.getElementById("segok").onclick=()=>{if(!G||G.locked)return;
     const extra=[...on].filter(g=>!cuts.has(g)),miss=[...cuts].filter(g=>!on.has(g));
-    if(!extra.length&&!miss.length){G.locked=true;app.querySelectorAll(".sgap.on").forEach(x=>x.classList.add("good"));sndGood();app.querySelector(".bar i").style.width=((G.i+1)/G.n*100)+"%";gNext(hasA("_rd_"+it.s)?"_rd_"+it.s:null);return}
+    if(!extra.length&&!miss.length){G.locked=true;app.querySelectorAll(".sgap.on").forEach(x=>x.classList.add("good"));sndGood();app.querySelector(".bar i").style.width=((G.i+1)/G.n*100)+"%";gNext(sKey(it.s));return}
     gBad(null);it.tries++;
     if(it.tries>=3){G.locked=true;app.querySelectorAll(".sgap").forEach(x=>{const g=+x.dataset.g;x.classList.toggle("on",cuts.has(g));x.classList.remove("bad","miss")});
-      sayChain(["_x_seg_sol"],"Regarde : voici où sont les espaces entre les mots.",()=>{});setTimeout(()=>{if(G&&G.list[G.i]===it){G.locked=false;G.ie=true;gNext(hasA("_rd_"+it.s)?"_rd_"+it.s:null)}},2500);return}
+      sayChain(["_x_seg_sol"],"Regarde : voici où sont les espaces entre les mots.",()=>{});setTimeout(()=>{if(G&&G.list[G.i]===it){G.locked=false;G.ie=true;gNext(sKey(it.s))}},2500);return}
     extra.forEach(g=>app.querySelector(`.sgap[data-g="${g}"]`).classList.add("bad"));miss.length&&!extra.length&&app.querySelectorAll(".sgap").forEach(()=>{});
     sayChain(["_x_seg_no"],extra.length?"Les traits en rouge coupent un mot en deux. Enlève-les.":"Il manque encore des espaces entre les mots.",()=>{})}}
 
 /* ===== Période 1 : compter les mots d'une phrase (voir les espaces entre les mots) ===== */
-function startCnt(wi){const id=WORLDS[wi].id,S0=[...new Set([...(READT[id]||[]),...(READT["S_"+id]||[])])].filter(s=>{const n=s.split(" ").length;return n>=2&&n<=6});
+function startCnt(wi){const id=WORLDS[wi].id,mine=tcItems(17,wi).map(x=>x.t),S0=mine.length?mine:[...new Set([...(READT[id]||[]),...(READT["S_"+id]||[])])].filter(s=>{const n=s.split(" ").length;return n>=2&&n<=6});
   gStart(17,wi,{list:shuffle(S0).slice(0,NQ(17)).map(s=>{const n=s.split(" ").length,o=new Set([n]);while(o.size<3){const c=n+[-2,-1,1,2][Math.random()*4|0];if(c>=1&&c<=8)o.add(c)}return {s,n,opts:[...o].sort((a,b)=>a-b)}})})}
 function rCnt(){const it=G.list[G.i],W=it.s.split(" ");
   app.innerHTML=gSection(`<div class="qhead"><span class="tag">Lecture</span><b>Combien de mots ?</b></div>
@@ -2675,7 +2681,7 @@ function rCnt(){const it=G.list[G.i],W=it.s.split(" ");
   const show=()=>{let k=0;app.querySelectorAll(".cw").forEach(b=>{b.classList.remove("on");b.querySelector(".cn").textContent=""});
     app.querySelectorAll(".cw").forEach((b,i)=>setTimeout(()=>{b.classList.add("on");b.querySelector(".cn").textContent=i+1},400+i*600))};
   app.querySelectorAll(".ans").forEach(b=>b.onclick=()=>{if(!G||G.locked||b.classList.contains("bad"))return;
-    if(+b.dataset.o===it.n){b.classList.add("good");sndGood();app.querySelector(".bar i").style.width=((G.i+1)/G.n*100)+"%";gNext(hasA("_rd_"+it.s)?"_rd_"+it.s:null)}
+    if(+b.dataset.o===it.n){b.classList.add("good");sndGood();app.querySelector(".bar i").style.width=((G.i+1)/G.n*100)+"%";gNext(sKey(it.s))}
     else{gBad(b);sayChain(["_x_cnt_no"],"Pas tout à fait. Regarde les espaces : chaque mot est séparé par un espace. Comptons ensemble.");show()}})}
 
 /* Période 5 : analyse grammaticale (un personnage pour chaque mot) */
@@ -3097,7 +3103,7 @@ function picLogin(p){
       if(!tok){sndBad();document.getElementById("perr").textContent="Ce ne sont pas tes images. Réessaie !";const w=app.querySelector(".pslots");w.classList.remove("nope");void w.offsetWidth;w.classList.add("nope");setTimeout(()=>{code=[];slots()},700);return}
       const st=await rpc("student_state",{p_token:tok});
       STU={token:tok,id:st.id,name:st.name,av:st.avatar,code:CLASS_CODE};LS("pompon-student",STU);
-      useStudent(st);sndWin();if(!st.avatar)return firstAvatar();lastWi=null;periodsScreen();say(`Coucou ${me().name} ! Choisis ta période !`,"_pick")}
+      useStudent(st);loadTCC();sndWin();if(!st.avatar)return firstAvatar();lastWi=null;periodsScreen();say(`Coucou ${me().name} ! Choisis ta période !`,"_pick")}
     catch(e){sndBad();document.getElementById("perr").textContent=/locked/.test(e.message)?"Trop d'essais. Attends 2 minutes.":"Pas de connexion internet.";setTimeout(()=>{code=[];slots()},700)}});
   say("Touche tes trois images secrètes.",null);
 }
@@ -3643,13 +3649,18 @@ function soundsScreen(){
 }
 const sndMsg=h=>{const m=document.getElementById("sndmsg");if(m)m.innerHTML=h};
 function sndRedraw(k){const el=[...app.querySelectorAll(".vrow")].find(r=>r.dataset.k===k);if(!el)return null;
-  const x=SNDV.tab==="L"?(([kk,tip])=>({key:k,lab:kk==="k"?"c k q":kk,tip}))(SND_LETTERS.find(([kk])=>"_ls_"+kk===k)):SNDV.tab==="S"?(sylKeys().find(y=>y.key===k)||{key:k,lab:k.slice(4)}):SNDV.tab==="SC"?(()=>{const sc=SCENES.find(x=>"_sc_"+x.id===k);return {key:k,lab:"🔊",tip:sc?sc.sentences[sc.answer]:""}})():{key:k,lab:k};
-  el.outerHTML=sndRow(x);const all=SNDV.tab==="L"?SND_LETTERS.map(([kk])=>"_ls_"+kk):SNDV.tab==="S"?sylKeys().map(y=>y.key):SNDV.tab==="SC"?[]:voiceWords()[SNDV.tab];const c=app.querySelector(".scount b");if(c)c.textContent=all.filter(REC).length;
+  const x=SNDV.tab==="L"?(([kk,tip])=>({key:k,lab:kk==="k"?"c k q":kk,tip}))(SND_LETTERS.find(([kk])=>"_ls_"+kk===k)):SNDV.tab==="S"?(sylKeys().find(y=>y.key===k)||{key:k,lab:k.slice(4)}):SNDV.tab==="TC"?(()=>{const it=(TCC[TCV.kind+"|"+WORLDS[TCV.wi].id]||[]).find(x=>tcKey(x.t)===k);return {key:k,lab:"🔊",tip:it?it.t:""}})():SNDV.tab==="SC"?(()=>{const sc=SCENES.find(x=>"_sc_"+x.id===k);return {key:k,lab:"🔊",tip:sc?sc.sentences[sc.answer]:""}})():{key:k,lab:k};
+  el.outerHTML=sndRow(x);const all=SNDV.tab==="L"?SND_LETTERS.map(([kk])=>"_ls_"+kk):SNDV.tab==="S"?sylKeys().map(y=>y.key):SNDV.tab==="SC"||SNDV.tab==="TC"?[]:voiceWords()[SNDV.tab];const c=app.querySelector(".scount b");if(c)c.textContent=all.filter(REC).length;
   return [...app.querySelectorAll(".vrow")].find(r=>r.dataset.k===k)}
 async function sndAct(k,a,b){userActed=true;
   if(a==="play"){play(k);return}
   if(a==="hear"){if(RECW&&RECW.k===k)playData(RECW.data);return}
   if(a==="rec"){if(RECW&&RECW.k!==k){const o=RECW.k;RECW=null;sndRedraw(o)}recordSound(k,b);return}
+  if(a==="keep"&&k.startsWith("_tc_")){b.disabled=true;b.textContent="…";const now=new Date().toISOString();
+    try{await tq("/rest/v1/class_sounds?on_conflict=class_id,key",{method:"POST",prefer:"resolution=merge-duplicates",body:[{class_id:TCUR,key:k,data:RECW.data,updated_at:now}]});
+      TSND[k]=now;TSBUF[k]=Promise.resolve(RECW.data);RECW=null;sndGood();sndMsg("");sndRedraw(k)}
+    catch(e){b.disabled=false;b.textContent="✓ Garder";sndMsg("Pas enregistré ("+e.message+"). Vérifie internet et réessaie.")}return}
+  if(a==="reset"&&k.startsWith("_tc_")){try{await tq(`/rest/v1/class_sounds?class_id=eq.${TCUR}&key=eq.${encodeURIComponent(k)}`,{method:"DELETE"});delete TSND[k];sndRedraw(k)}catch(e){sndMsg("Impossible ("+e.message+").")}return}
   if(a==="keep"){b.disabled=true;b.textContent="…";const now=new Date().toISOString();
     try{await tq("/rest/v1/site_sounds?on_conflict=key",{method:"POST",prefer:"resolution=merge-duplicates",body:[{key:k,data:RECW.data,updated_at:now}]});
       SIDX[k]=now;VMEM[k+"@"+now]=RECW.data;LS("pompon-voix-idx",SIDX);try{(await vopen()).put(vreq(k),new Response(RECW.data))}catch(e){}RECW=null;sndGood();sndMsg("");
@@ -3670,25 +3681,25 @@ async function recordSound(key,btn){
   catch(e){recordSound.stop=null;btn.classList.remove("on");btn.textContent="🎙️";sndMsg("Le micro est refusé. Autorise le micro pour ce site (icône à gauche de l'adresse), puis réessaie.");return}
   const mr=new MediaRecorder(st),ch=[];mr.ondataavailable=e=>e.data.size&&ch.push(e.data);
   const a=ctx(),an=a.createAnalyser();an.fftSize=1024;const src=a.createMediaStreamSource(st);src.connect(an);const buf=new Float32Array(an.fftSize);
-  let spoke=false,quiet=0,t0=performance.now(),last=t0,raf;
+  let spoke=false,quiet=0,t0=performance.now(),last=t0,raf;const LONG=/^_(tc|sc)_/.test(key); /* une phrase : on laisse le temps (pauses, 20 s au plus) */
   const stop=()=>{cancelAnimationFrame(raf);recordSound.stop=null;if(mr.state!=="inactive")mr.stop()};recordSound.stop=stop;
   const tick=()=>{const now=performance.now();an.getFloatTimeDomainData(buf);let q=0;for(const v of buf)q+=v*v;const r=Math.sqrt(q/buf.length);
     if(r>0.03)spoke=true,quiet=0;else if(spoke)quiet+=now-last;last=now;btn.style.setProperty("--lvl",Math.min(1,r*8));
-    if((spoke&&quiet>700)||now-t0>4000)return stop();raf=requestAnimationFrame(tick)};
+    if((spoke&&quiet>(LONG?2200:700))||now-t0>(LONG?20000:4000))return stop();raf=requestAnimationFrame(tick)};
   mr.onstop=async()=>{st.getTracks().forEach(t=>t.stop());try{src.disconnect()}catch(e){}
-    try{const raw=await new Blob(ch).arrayBuffer();RECW={k:key,data:await cleanRec(raw)};sndMsg("");sndRedraw(key);playData(RECW.data)}
+    try{const raw=await new Blob(ch).arrayBuffer();RECW={k:key,data:await cleanRec(raw,/^_(tc|sc)_/.test(key)?20:2.5)};sndMsg("");sndRedraw(key);playData(RECW.data)}
     catch(e){sndRedraw(key);sndMsg(e.message==="vide"?"On n'a rien entendu. Rapproche-toi du micro et parle un peu plus fort.":"L'enregistrement n'a pas pu être lu ("+e.message+").")}};
-  mr.start();sndMsg("Parle maintenant…");tick();
+  mr.start();sndMsg(LONG?"Lis la phrase maintenant… (touche ⏹ quand tu as fini)":"Parle maintenant…");tick();
 }
 /* coupe le silence, égalise le volume, et garde un petit fichier WAV (lisible partout) */
-async function cleanRec(raw){
+async function cleanRec(raw,maxS=2.5){
   const a=ctx(),buf=await new Promise((res,rej)=>{const p=a.decodeAudioData(raw,res,rej);if(p&&p.then)p.then(res,rej)});
   const SR=16000,off=new OfflineAudioContext(1,Math.ceil(buf.duration*SR),SR),s=off.createBufferSource();s.buffer=buf;s.connect(off.destination);s.start();
   const x=(await off.startRendering()).getChannelData(0);
   const f=Math.round(SR*.01),E=[];for(let i=0;i+f<=x.length;i+=f){let q=0;for(let j=i;j<i+f;j++)q+=x[j]*x[j];E.push(Math.sqrt(q/f))}
   const pk=Math.max(...E);if(pk<0.01)throw new Error("vide");
   const th=Math.max(0.006,pk*0.08);let a0=E.findIndex(e=>e>th),a1=E.length-1-[...E].reverse().findIndex(e=>e>th);
-  a0=Math.max(0,a0-3)*f;a1=Math.min(x.length,(a1+6)*f);let y=x.slice(a0,Math.min(a1,a0+Math.round(SR*2.5)));let mx=0;for(const v of y)mx=Math.max(mx,Math.abs(v));
+  a0=Math.max(0,a0-3)*f;a1=Math.min(x.length,(a1+6)*f);let y=x.slice(a0,Math.min(a1,a0+Math.round(SR*maxS)));let mx=0;for(const v of y)mx=Math.max(mx,Math.abs(v));
   const g=0.9/mx,fi=Math.round(SR*.012),fo=Math.round(SR*.04);
   y=y.map((v,i)=>v*g*Math.min(1,i/fi,(y.length-1-i)/fo));
   const pad=Math.round(SR*.02),L=y.length+pad*2,dv=new DataView(new ArrayBuffer(44+L*2));
@@ -3698,6 +3709,43 @@ async function cleanRec(raw){
   const u=new Uint8Array(dv.buffer);let bin="";for(let i=0;i<u.length;i+=8192)bin+=String.fromCharCode.apply(null,u.subarray(i,i+8192));
   return "data:audio/wav;base64,"+btoa(bin)}
 
+/* ===== Contenus de l'enseignant (par classe) : ses phrases remplacent celles de Pompon ===== */
+let TCC={},TSND={};const TSBUF={};
+const tcKey=t=>{let h=5381;for(const c of t)h=((h<<5)+h+c.charCodeAt(0))|0;return "_tc_"+(h>>>0).toString(36)};
+const tcItems=(kind,wi)=>(TCC[kind+"|"+WORLDS[wi].id]||[]).filter(x=>x&&x.t);
+async function loadTCC(){try{let r=null;
+  if(STU&&STU.token)r=await rpc("student_class_content",{p_token:STU.token});
+  else if(TEACH&&TCUR){const c=await tq(`/rest/v1/class_content?class_id=eq.${TCUR}&select=kind,period,items`),s2=await tq(`/rest/v1/class_sounds?class_id=eq.${TCUR}&select=key,updated_at`);r={content:c,sounds:Object.fromEntries(s2.map(x=>[x.key,x.updated_at]))}}
+  if(r){TCC={};(r.content||[]).forEach(x=>TCC[x.kind+"|"+x.period]=x.items||[]);TSND=r.sounds||{};try{LS("pompon-tcc",{TCC,TSND})}catch(e){}}}
+  catch(e){const c=LS("pompon-tcc");if(c){TCC=c.TCC||{};TSND=c.TSND||{}}}}
+async function tcSoundData(key){if(TSBUF[key])return TSBUF[key];
+  const p=(async()=>{if(STU&&STU.token)return await rpc("student_class_sound",{p_token:STU.token,p_key:key});const r=await tq(`/rest/v1/class_sounds?class_id=eq.${TCUR}&key=eq.${encodeURIComponent(key)}&select=data`);return r[0]&&r[0].data})();
+  TSBUF[key]=p;p.catch(()=>{delete TSBUF[key]});return p}
+/* exercices de phrases qu'on peut écrire soi-même */
+const TC_KINDS={17:"Compter les mots",15:"Mots dans l'ordre",16:"Sépare les mots"};
+let TCV={wi:0,kind:17};
+function contentScreen(){document.body.classList.add("home");G=null;SNDV.tab="TC";const wi=TCV.wi,w=WORLDS[wi];
+  const kinds=Object.keys(TC_KINDS).map(Number).filter(k=>GSETS[w.id].includes(k));if(!kinds.includes(TCV.kind))TCV.kind=kinds[0];
+  const cl=TCLASSES.find(c=>c.id===TCUR),items=TCC[TCV.kind+"|"+w.id]||[];
+  app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><h1>Mes phrases</h1><span></span></header>
+   <section class="who sndadmin tcadmin"><p class="imghelp">Écris tes propres phrases pour la classe <b>${esc(cl?cl.name:"")}</b>. Quand tu en mets, elles <b>remplacent</b> celles de Pompon dans cet exercice. Une phrase par ligne. Ensuite, enregistre chaque phrase avec ta voix (🎙️) pour qu'elle soit lue aux élèves.</p>
+    ${TCLASSES.length>1?`<div class="ptabs">${TCLASSES.map(c=>`<button class="ptab" data-c="${c.id}" aria-pressed="${c.id===TCUR}" style="--c:#2b2b2b;--on:#fff">${esc(c.name)}</button>`).join("")}</div>`:""}
+    <div class="ptabs">${WORLDS.map((x,i)=>`<button class="ptab" data-w="${i}" aria-pressed="${i===wi}" style="--c:${x.c};--on:${x.on}">${x.p} · ${x.name.replace(/^(La |Le )/,"")}</button>`).join("")}</div>
+    ${kinds.length?`<div class="ptabs">${kinds.map(k=>`<button class="ptab" data-k="${k}" aria-pressed="${k===TCV.kind}" style="--c:${w.c};--on:${w.on}">${TC_KINDS[k]}${(TCC[k+"|"+w.id]||[]).length?" ✓":""}</button>`).join("")}</div>
+    <p class="imghelp" style="margin:0">${items.length?`Les élèves voient <b>tes ${items.length} phrases</b> à la place de celles de Pompon.`:"Pour l'instant, ce sont les phrases de Pompon."}</p>
+    <textarea id="tctext" rows="7" class="tctext" placeholder="La fée file.&#10;Le rat rit à Léo.&#10;Lili a lu.">${esc(items.map(x=>x.t).join("\n"))}</textarea>
+    <div class="vbar"><button class="btn" id="tcsave" style="--c:#4f9f45">Enregistrer mes phrases</button>${items.length?`<button class="btn alt" id="tcreset">Revenir aux phrases de Pompon</button>`:""}</div><p class="err" id="sndmsg"></p>
+    <div class="slist" id="slist">${items.map(x=>sndRow({key:tcKey(x.t),lab:"🔊",tip:x.t})).join("")}</div>`:`<p class="imghelp">Pas d'exercice de phrases à personnaliser dans cette période pour l'instant.</p>`}</section>`;
+  document.getElementById("back").onclick=()=>{RECW=null;SNDV.tab="L";periodsScreen()};
+  app.querySelectorAll("[data-w]").forEach(b=>b.onclick=()=>{TCV.wi=+b.dataset.w;contentScreen()});
+  app.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{TCV.kind=+b.dataset.k;contentScreen()});
+  app.querySelectorAll("[data-c]").forEach(b=>b.onclick=async()=>{TCUR=b.dataset.c;LS("pompon-tclass",TCUR);await loadTCC();contentScreen()});
+  const save=async L=>{const m=document.getElementById("sndmsg");try{await tq("/rest/v1/class_content?on_conflict=class_id,kind,period",{method:"POST",prefer:"resolution=merge-duplicates",body:[{class_id:TCUR,kind:TCV.kind,period:w.id,items:L,updated_at:new Date().toISOString()}]});TCC[TCV.kind+"|"+w.id]=L;contentScreen();sndMsg(L.length?"C'est enregistré ! Enregistre maintenant ta voix pour chaque phrase.":"Les phrases de Pompon sont revenues.")}catch(e){m.textContent="Pas enregistré ("+e.message+")."}};
+  const sv=document.getElementById("tcsave");if(sv)sv.onclick=()=>{const L=document.getElementById("tctext").value.split("\n").map(x=>x.trim().replace(/\s+/g," ")).filter(Boolean).slice(0,40);
+    const bad=L.filter(x=>x.split(" ").length<2);if(TCV.kind!==17&&bad.length){document.getElementById("sndmsg").textContent="Chaque phrase doit avoir au moins 2 mots.";return}save(L.map(t=>({t})))};
+  const rs=document.getElementById("tcreset");if(rs)rs.onclick=()=>{if(confirm("Effacer tes phrases et revenir à celles de Pompon ?"))save([])};
+  const sl=document.getElementById("slist");if(sl)sl.onclick=e=>{const b=e.target.closest("[data-a]");if(!b)return;sndAct(b.closest(".vrow").dataset.k,b.dataset.a,b)};
+}
 /* ===== Scènes : une image importée + 3 phrases (pour « Image et phrase ») ===== */
 let SCENES=(()=>{try{return LS("pompon-scenes")||[]}catch(e){return []}})();
 async function loadScenes(){try{const r=await sb("/rest/v1/site_scenes?select=id,period,image,sentences,answer&order=created_at");if(Array.isArray(r)){SCENES=r;try{LS("pompon-scenes",r)}catch(e){}}}catch(e){}}
@@ -3728,7 +3776,7 @@ function scenesScreen(wi){if(wi!=null)SCN.wi=wi;wi=SCN.wi;document.body.classLis
 }
 /* images du site (les mêmes pour toutes les classes) + droits d'administrateur du site */
 let SITE_ADMIN=false;
-async function loadTeacherImages(){
+async function loadTeacherImages(){setTimeout(()=>loadTCC(),1500);
   try{const r=await sb("/rest/v1/site_images?select=key,data");CUSTOM={};r.forEach(x=>CUSTOM[x.key]=x.data);LS("pompon-images-cache",CUSTOM)}catch(e){}
   applyGuide();
   try{SITE_ADMIN=!!(await tq("/rest/v1/rpc/is_site_admin",{method:"POST",body:{}}))}catch(e){SITE_ADMIN=false}
@@ -4253,8 +4301,8 @@ async function boot(){
   try{CUSTOM=LS("pompon-images-cache")||{};applyGuide()}catch(e){}
   if(authFromLink())return;
   if(TEACH&&await tToken()){useTeacher();await loadTeacherImages();welcomeTeacher();return}
-  if(STU){try{const st=await rpc("student_state",{p_token:STU.token});if(st){useStudent(st);if(!st.avatar)return firstAvatar();lastWi=null;periodsScreen();say(`Coucou ${me().name} ! Choisis ta période !`,"_pick");return}STU=null;LS("pompon-student",null)}
-    catch(e){CUSTOM=LS("pompon-images-cache")||{};useStudent({id:STU.id,name:STU.name,avatar:STU.av,progress:{},lvl:1});lastWi=null;periodsScreen();netBadge(true);return}}
+  if(STU){try{const st=await rpc("student_state",{p_token:STU.token});if(st){useStudent(st);loadTCC();if(!st.avatar)return firstAvatar();lastWi=null;periodsScreen();say(`Coucou ${me().name} ! Choisis ta période !`,"_pick");return}STU=null;LS("pompon-student",null)}
+    catch(e){CUSTOM=LS("pompon-images-cache")||{};useStudent({id:STU.id,name:STU.name,avatar:STU.av,progress:{},lvl:1});loadTCC();lastWi=null;periodsScreen();netBadge(true);return}}
   CLASS_CODE?rosterScreen():classScreen();
 }
 boot().catch(()=>{}).finally(()=>window.hideSplash&&window.hideSplash());
