@@ -3858,12 +3858,13 @@ function animateModel(M,col){const mg=document.getElementById("wmg"),tx=document
   const NS="http://www.w3.org/2000/svg",myG=G;mg.innerHTML="";ag.innerHTML="";tx.setAttribute("fill",col);
   const dg=document.getElementById("wdotg");if(dg)dg.style.opacity="0"; /* pendant le modèle, on cache les pointillés : le trait reste net */
   const g=document.createElementNS(NS,"g");g.setAttribute("transform",`translate(0 ${YTOP}) scale(1 -1)`);mg.appendChild(g);
-  const W=Math.max(40,M.thick*2.1);
-  const els=M.strokes.map(s=>{const p=document.createElementNS(NS,"path");p.setAttribute("d",smoothD(s.map(q=>[+q[0].toFixed(1),+q[1].toFixed(1)])));p.setAttribute("fill","none");p.setAttribute("stroke","#fff");
-    p.setAttribute("stroke-width",W);p.setAttribute("stroke-linecap","round");p.setAttribute("stroke-linejoin","round");g.appendChild(p);const L=Math.max(1,p.getTotalLength());p.style.strokeDasharray=L+" "+(L+10);p.style.strokeDashoffset=L;return [p,L]});
+  /* comme un vrai stylo : on dessine le trait lui-même (pas un masque qui dévoile la lettre autour, sinon le bas du u apparaît dès le départ) */
+  const W=Math.max(22,M.thick*1.05);const ink=document.createElementNS(NS,"g");ag.appendChild(ink);
+  const els=M.strokes.map(s=>{const p=document.createElementNS(NS,"path");p.setAttribute("d",smoothD(s.map(q=>[+q[0].toFixed(1),+q[1].toFixed(1)])));p.setAttribute("fill","none");p.setAttribute("stroke",col);
+    p.setAttribute("stroke-width",W);p.setAttribute("stroke-linecap","round");p.setAttribute("stroke-linejoin","round");ink.appendChild(p);const L=Math.max(1,p.getTotalLength());p.style.strokeDasharray=L+" "+(L+10);p.style.strokeDashoffset=L;return [p,L]});
   const pen=document.createElementNS(NS,"g");pen.innerHTML=`<circle r="30" fill="#ffd34d" stroke="#2b2b2b" stroke-width="8"/>`;ag.appendChild(pen);
   let k=0,t0=null;const SPD=0.7; /* unités par milliseconde : régulier, ni trop vite ni trop lent */
-  const step=ts=>{if(G!==myG||!mg.isConnected)return;if(k>=els.length){pen.remove();if(dg)dg.style.opacity="";const r=document.createElementNS(NS,"rect");r.setAttribute("x",-1e4);r.setAttribute("y",-1e4);r.setAttribute("width",3e4);r.setAttribute("height",3e4);r.setAttribute("fill","#fff");g.appendChild(r);return}
+  const step=ts=>{if(G!==myG||!mg.isConnected)return;if(k>=els.length){pen.remove();if(dg)dg.style.opacity="";const r=document.createElementNS(NS,"rect");r.setAttribute("x",-1e4);r.setAttribute("y",-1e4);r.setAttribute("width",3e4);r.setAttribute("height",3e4);r.setAttribute("fill","#fff");g.appendChild(r);setTimeout(()=>ink.remove(),250);return}
     const [p,L]=els[k];if(t0===null)t0=ts;const d=Math.min(L,(ts-t0)*SPD);p.style.strokeDashoffset=L-d;const pt=p.getPointAtLength(d);pen.setAttribute("transform",`translate(${pt.x} ${pt.y})`);
     if(d>=L){k++;t0=null;setTimeout(()=>requestAnimationFrame(step),k<els.length?420:0);return}requestAnimationFrame(step)};requestAnimationFrame(step)}
 /* note : on compare au modèle (précision, couverture, sens, lignes) */
