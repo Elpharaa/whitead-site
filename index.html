@@ -645,6 +645,7 @@ body.racing #mascot,body:has(.prog,.imgadmin,.sndadmin,.board,.bdsetup,.tlist,.s
 .lgame{gap:14px}.ldots{display:flex;gap:6px;margin-left:auto}.ldots i{width:14px;height:14px;border-radius:50%;border:3px solid var(--ink);background:#fff}.ldots i.on{background:var(--c)}.ldots i.cur{background:var(--sun)}
 .lpics{display:flex;justify-content:center;gap:18px}.lpics .ic{width:130px;height:130px}.lpics.hide{display:none}
 .lrd{align-self:center;max-width:94%;padding:22px 30px;background:#fff;border:5px solid var(--ink);border-radius:30px;box-shadow:0 8px 0 var(--c);text-align:center;font-family:var(--body);font-weight:700;font-size:clamp(34px,6vw,58px);line-height:1.35}
+.micwhy{margin:4px auto 0;max-width:560px;text-align:center;font-size:14px;color:#8a5a12;background:#fff4dc;border-radius:12px;padding:6px 10px}.linkbtn{border:0;background:none;color:#2f5bd9;text-decoration:underline;font:inherit;font-weight:700}
 .lrd.w{font-size:clamp(54px,11vw,104px)}.lrd .lw{display:inline-block;padding:0 4px;border-radius:12px;transition:background .2s,color .2s}
 .lrd .lw.g{background:#d9f3d0;color:#2d7a28}.lrd .lw.o{background:#ffe2c4;color:#b4560f;text-decoration:underline wavy #f0883a}
 .lrd .sy0{color:#2f5bd9}.lrd .sy1{color:#e2534a}.lrd.ok{background:#eaf8e4;border-color:#3fae49}.lrd.no{animation:shake .45s}
@@ -1827,6 +1828,9 @@ function confetti(wid){const pool=WORLDS.find(w=>w.id===wid).animals;for(let i=0
    écoute le mot, et dit lui-même s'il avait bien lu. */
 const MIC=svg(`<rect x="36" y="12" width="28" height="48" rx="14" fill="#e2534a"/><path d="M24 46 Q24 74 50 74 Q76 74 76 46 M50 74 V88 M36 90 H64" fill="none" style="stroke-width:7;stroke-linecap:round"/>`);
 const SRC=window.SpeechRecognition||window.webkitSpeechRecognition;
+const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+let MICOFF=false,MICERR="";
+const MICWHY={"none":"Ce navigateur ne permet pas le micro. Sur Android : Chrome. Sur iPhone / iPad : Safari.","not-allowed":"Micro refusé : autorise le micro pour ce site (cadenas à côté de l'adresse).","service-not-allowed":IOS?"Sur iPhone / iPad : active la Dictée (Réglages › Général › Clavier) et ouvre le site dans Safari.":"La reconnaissance vocale est bloquée sur cet appareil.","audio-capture":"Aucun micro trouvé (ou il est utilisé par une autre appli).","network":"Il faut internet pour que Pompon t'écoute.","start":"Le micro n'a pas pu démarrer."};
 /* clé « comme ça se prononce » : assez pour reconnaître un mot lu, sans être un vrai dictionnaire */
 function phKey(s){s=(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,m=>m==="́"||m==="̀"||m==="̂"?"´":"").replace(/[^a-z´œ]/g,"");
   s=s.replace(/œu|oeu/g,"eu").replace(/eau|au/g,"o").replace(/ph/g,"f").replace(/qu|q/g,"k").replace(/ch/g,"$").replace(/gn/g,"N").replace(/gu(?=[ei])/g,"g")
@@ -1997,7 +2001,7 @@ function lireHome(wi){
 function lireStart(wi,k){const pick=(L,n)=>{const todo=shuffle(L.filter(t=>!best[lKey(wi,t)])),done=shuffle(L.filter(t=>best[lKey(wi,t)]));return [...todo,...done].slice(0,n)};
   const items=k==="mot"?pick(lireWords(wi),5):k==="phr"?pick(lirePhr(wi),3):lireStory(wi);
   if(!items.length)return lireHome(wi);
-  G={kind:13,wi,w:WORLDS[wi],lk:k,items:items.map(t=>({t,miss:0})),i:0,errors:0,self:!SRC||LS("pompon-nomic")===true};lireRead()}
+  G={kind:13,wi,w:WORLDS[wi],lk:k,items:items.map(t=>({t,miss:0})),i:0,errors:0,self:!SRC||MICOFF};lireRead()}
 /* comparer ce qui est entendu à la phrase, mot par mot (dans l'ordre, avec un peu de souplesse) */
 function matchWords(tw,heardTxt){const H=heardTxt.toLowerCase().replace(/[’']/g," ").replace(/[.!?,;:]/g," ").split(/\s+/).filter(Boolean).map(phKey);
   const T=tw.map(w=>w.toLowerCase().split(/[’']/).map(phKey));let p=0;
@@ -2013,7 +2017,7 @@ function lireRead(){const S0=G,it=S0.items[S0.i],w=S0.w,isW=S0.lk==="mot",self=S
    <div class="rdbar">${self?`<button class="rdmic self" id="lhear" aria-label="Écouter">${SPEAKER}</button>`:`<button class="rdmic" id="lmic" aria-label="Lire au micro">${MIC}<span class="rdwave"><i></i><i></i><i></i></span></button>`}
     <button class="mini" id="lhelp" aria-label="Écouter" ${it.miss>=2&&!self?"":"hidden"}>${SPEAKER}</button></div>
    <div class="rdself" id="lself" hidden><button class="btn" id="lyes" style="--c:#4f9f45">J'avais bien lu</button><button class="btn alt" id="lno">Je me suis trompé</button></div>
-   <p class="rdhint" id="lhint">${self?"Lis tout haut, puis touche le haut-parleur pour vérifier.":"Appuie sur le micro, puis lis."}</p></section>`;
+   <p class="rdhint" id="lhint">${self?"Lis tout haut, puis touche le haut-parleur pour vérifier.":"Appuie sur le micro, puis lis."}</p>${self&&(MICERR||!SRC)?`<p class="micwhy">${esc(MICWHY[MICERR||"none"]||MICWHY.start)}${SRC?` <button class="linkbtn" id="lremic">Réessayer le micro</button>`:""}</p>`:""}</section>`;
   const card=document.getElementById("lcard"),audio=isW?wkey(it.t):"_rd_"+it.t;
   document.getElementById("back").onclick=()=>{stopVoice();G=null;lireHome(S0.wi)};
   const help=document.getElementById("lhelp");help.onclick=()=>play(audio);
@@ -2026,25 +2030,34 @@ function lireRead(){const S0=G,it=S0.items[S0.i],w=S0.w,isW=S0.lk==="mot",self=S
     if(isW){lireRead();say(it.miss===1?"Essaie encore ! Regarde bien les syllabes.":"Écoute le mot, puis lis-le à ton tour.",it.miss===1?"_rl_retry":"_rl_listen",()=>{if(it.miss>=2&&G===S0)play(audio)});return}
     lireRead();const c2=document.getElementById("lcard");if(flags)c2.querySelectorAll(".lw").forEach((x,i)=>x.classList.add(flags[i]?"g":"o"));
     say(it.miss===1?"Relis les mots en orange.":"Écoute la phrase, puis lis-la à ton tour.",it.miss===1?"_rl_orange":"_rl_listen2",()=>{if(it.miss>=2&&G===S0)play(audio)})};
+  const rem=document.getElementById("lremic");if(rem)rem.onclick=()=>{MICOFF=false;MICERR="";S0.self=false;lireRead()};
   if(self){document.getElementById("lhear").onclick=()=>{play(audio);document.getElementById("lself").hidden=false;document.getElementById("lhint").textContent="Tu avais bien lu ?"};
     document.getElementById("lyes").onclick=()=>win();document.getElementById("lno").onclick=()=>{if(!S0.locked)miss()};
     if(story&&S0.i===0)say("Lis l'histoire tout haut, page après page.","_rl_story0");return}
   const mic=document.getElementById("lmic");
-  mic.onclick=()=>{if(S0.locked||mic.classList.contains("on"))return;stopVoice();let r;try{r=new SRC()}catch(e){S0.self=true;lireRead();return}
-    r.lang="fr-FR";r.interimResults=true;r.maxAlternatives=5;r.continuous=!isW;
-    let done=false,heard=[],best1="",tm,silence;const words=[...card.querySelectorAll(".lw")];
+  const goSelf=er=>{MICERR=er;MICOFF=true;S0.self=true;say("Le micro ne marche pas ici. Lis tout haut, puis vérifie en écoutant.","_rl_nomic");setTimeout(()=>{if(G===S0)lireRead()},2200)};
+  if(mic)mic.onclick=()=>{if(S0.locked||mic.classList.contains("on"))return;stopVoice();
+    const T0=Date.now(),MAX=isW?7000:16000;let done=false,heard=[],acc="",best1="",tm,silence,r=null,restarts=0;const words=[...card.querySelectorAll(".lw")];
     const check=()=>{if(isW)return heardOk(it.t,heard);let bestF=null,bestN=-1;for(const h of [best1,...heard]){const f=matchWords(tw,h),n=f.filter(Boolean).length;if(n>bestN){bestN=n;bestF=f}}
       words.forEach((x,i)=>x.classList.toggle("g",!!bestF[i]));const need=tw.map(x=>phKey(x).length>1);const okAll=bestF.every((f,i)=>f||!need[i]);
       const miss1=bestF.filter((f,i)=>!f&&need[i]).length;return okAll||(tw.length>=5&&miss1<=1)?true:bestF};
-    const fin=final=>{if(done)return;const c=check();if(c===true){done=true;clearTimeout(tm);clearTimeout(silence);mic.classList.remove("on");try{r.abort()}catch(e){}win();return}
-      if(!final)return;done=true;clearTimeout(tm);clearTimeout(silence);mic.classList.remove("on");try{r.abort()}catch(e){}
+    const stopR=()=>{clearTimeout(tm);clearTimeout(silence);mic.classList.remove("on");try{r&&r.abort()}catch(e){}};
+    const fin=final=>{if(done)return;const c=check();if(c===true){done=true;stopR();win();return}
+      if(!final)return;done=true;stopR();
       if(!heard.join("").trim())say("Je n'ai rien entendu. Approche-toi et lis plus fort.","_rl_none");else miss(c===false?null:c)};
-    r.onresult=e=>{best1="";for(const res of e.results){best1+=" "+res[0].transcript;for(const a of res)heard.push(a.transcript)}heard.push(best1);
-      clearTimeout(silence);silence=setTimeout(()=>fin(true),isW?900:1800);fin([...e.results].every(x=>x.isFinal)&&isW)};
-    r.onerror=e=>{if(["not-allowed","service-not-allowed","audio-capture","network"].includes(e.error)){done=true;mic.classList.remove("on");
-        say("Le micro ne marche pas ici. Lis tout haut, puis vérifie en écoutant.","_rl_nomic");if(e.error!=="network")LS("pompon-nomic",true);S0.self=true;setTimeout(()=>{if(G===S0)lireRead()},2500);return}fin(true)};
-    r.onend=()=>fin(true);
-    try{r.start();mic.classList.add("on");tm=setTimeout(()=>fin(true),isW?7000:15000)}catch(e){fin(true)}};
+    const startR=()=>{try{r=new SRC()}catch(e){done=true;stopR();goSelf("start");return}
+      let cur="";r.lang="fr-FR";r.interimResults=true;r.maxAlternatives=IOS?1:5;r.continuous=!isW&&!IOS;
+      r.onresult=e=>{cur="";for(const res of e.results){cur+=" "+res[0].transcript;for(const a of res){heard.push(a.transcript);if(acc)heard.push(acc+" "+a.transcript)}}
+        best1=(acc+" "+cur).trim();heard.push(best1);
+        clearTimeout(silence);silence=setTimeout(()=>fin(true),isW?900:1800);fin([...e.results].every(x=>x.isFinal)&&isW)};
+      r.onerror=e=>{const er=e.error;if(G!==S0||done)return;
+        if(["not-allowed","service-not-allowed","audio-capture","network"].includes(er)){done=true;stopR();if(er==="network"){MICERR="";say("Il faut internet pour que Pompon t'écoute.");document.getElementById("lhint").textContent=MICWHY.network;return}goSelf(er)}};
+      r.onend=()=>{if(done||G!==S0)return;if(cur.trim()){acc=(acc+" "+cur).trim();cur=""}
+        /* l'iPhone s'arrête à chaque pause : on relance pour laisser finir la phrase */
+        if(Date.now()-T0<MAX-400&&restarts<10&&(!isW||!heard.join("").trim())){restarts++;setTimeout(()=>{if(!done&&G===S0)startR()},150)}
+        else if(!heard.join("").trim()||!silence)fin(true)};
+      try{r.start()}catch(e){done=true;stopR();goSelf("start")}};
+    mic.classList.add("on");tm=setTimeout(()=>fin(true),MAX);startR()};
   if(story&&S0.i===0&&!it.miss)say("Lis l'histoire tout haut, page après page.","_rl_story0");
 }
 function lireEnd(){const S0=G,w=S0.w,e=S0.errors,stars=e<=1?3:e<=3?2:1,story=S0.lk==="his";
