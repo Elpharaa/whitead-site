@@ -640,7 +640,7 @@ body.racing #mascot,body:has(.prog,.imgadmin,.sndadmin,.board,.bdsetup,.tlist,.s
 @media (max-width:800px){.board{grid-template-columns:1fr}.bdchoices{grid-template-columns:1fr}}
 
 /* ---- Catégorie Je lis à Pompon ---- */
-.hcards{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%}@media (max-width:620px){.hcards{grid-template-columns:1fr}}.hcards .wcard small{display:none}
+.hcards{display:grid;grid-template-columns:1fr 1fr;gap:16px;width:100%}@media (max-width:620px){.hcards{grid-template-columns:1fr}}.hcards .wcard small{display:none}.hcards.one{grid-template-columns:1fr}.hcards.one .wcard small{display:inline;margin-left:auto}
 .lcardh{box-shadow:0 8px 0 #e2534a}.lcardh .wci .ic{width:64px;height:64px}
 .lgame{gap:14px}.ldots{display:flex;gap:6px;margin-left:auto}.ldots i{width:14px;height:14px;border-radius:50%;border:3px solid var(--ink);background:#fff}.ldots i.on{background:var(--c)}.ldots i.cur{background:var(--sun)}
 .lpics{display:flex;justify-content:center;gap:18px}.lpics .ic{width:130px;height:130px}.lpics.hide{display:none}
@@ -1741,15 +1741,15 @@ function periodsScreen(){
        <span class="pnum">${w.p}</span><span class="ppic">${svg(WART(w.id))}</span><span class="pname">Période ${w.p}</span>
        <span class="pprog">${isAdmin()?LV.map(l=>`<i class="${levelDone(wi,l)?"on":""}"></i>`).join(""):`<span class="pbar"><i style="width:${pathOf(wi).filter(nodeDone).length/pathOf(wi).length*100}%"></i></span>`}</span>
        ${open?"":`<span class="padlock">${LOCKI}</span>`}${done?`<span class="pcheck">${svg(CHECK)}</span>`:""}</button>`}).join("")}</div>
-   <div class="hcards"><button class="wcard" id="wbtn"><span class="wci">${svg('<rect x="6" y="10" width="88" height="80" rx="10" fill="#fff"/><rect x="6" y="10" width="14" height="30" fill="#8fd0f5"/><rect x="6" y="40" width="14" height="20" fill="#8fd16a"/><rect x="6" y="60" width="14" height="30" fill="#a47b55"/><path d="M6 40H94M6 60H94" stroke="#3fae49" stroke-width="3"/><path d="M6 60H94" stroke="#9b6a3c" stroke-width="3"/><path d="M30 55 Q38 40 46 52 Q50 60 56 50 Q60 40 66 54 Q70 62 80 50" fill="none" stroke="#2f5bd9" stroke-width="5" stroke-linecap="round"/><path d="M70 20 L88 38 L64 62 L56 64 L58 56Z" fill="#ffd34d" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>')}</span><b>J'écris</b><small>Tracer les lettres en attaché</small></button>
-   <button class="wcard lcardh" id="lbtn"><span class="wci">${MIC}</span><b>Je lis à Pompon</b><small>Lire tout haut</small></button></div>`;
+   <div class="hcards one"><button class="wcard" id="wbtn"><span class="wci">${svg('<rect x="6" y="10" width="88" height="80" rx="10" fill="#fff"/><rect x="6" y="10" width="14" height="30" fill="#8fd0f5"/><rect x="6" y="40" width="14" height="20" fill="#8fd16a"/><rect x="6" y="60" width="14" height="30" fill="#a47b55"/><path d="M6 40H94M6 60H94" stroke="#3fae49" stroke-width="3"/><path d="M6 60H94" stroke="#9b6a3c" stroke-width="3"/><path d="M30 55 Q38 40 46 52 Q50 60 56 50 Q60 40 66 54 Q70 62 80 50" fill="none" stroke="#2f5bd9" stroke-width="5" stroke-linecap="round"/><path d="M70 20 L88 38 L64 62 L56 64 L58 56Z" fill="#ffd34d" stroke="#2b2b2b" stroke-width="3" stroke-linejoin="round"/>')}</span><b>J'écris</b><small>Tracer les lettres en attaché</small></button>
+</div>`;
   app.querySelectorAll(".pcard2").forEach(b=>b.onclick=()=>{const wi=+b.dataset.w;
     if(!periodOpen(wi)){say("Termine d'abord la période d'avant.","_lockp");b.classList.remove("nope");void b.offsetWidth;b.classList.add("nope");return}
     stopVoice();periodMap(wi)});
   document.getElementById("who").onclick=()=>{stopVoice();if(p.admin)studentsScreen();else meScreen("av")};
   const ib=document.getElementById("imgs");if(ib)ib.onclick=()=>{stopVoice();imagesScreen(0)};
   document.getElementById("wbtn").onclick=()=>{stopVoice();writeHome()};
-  document.getElementById("lbtn").onclick=()=>{stopVoice();lireHome()};
+  /* « Je lis à Pompon » retiré de l'accueil (reconnaissance vocale pas assez fiable) : le code reste pour plus tard */
   const sdb=document.getElementById("snds");if(sdb)sdb.onclick=()=>{stopVoice();soundsScreen()};
   const pb=document.getElementById("prog");if(pb)pb.onclick=()=>{stopVoice();programScreen()};
   const sbn=document.getElementById("studs");if(sbn)sbn.onclick=()=>{stopVoice();studentsScreen()};
@@ -3172,9 +3172,9 @@ function classDiff(rows){const byU={},byC={},byW={};
     for(const [w,v] of Object.entries((s.stats||{}).w||{}))if(v[1]>0)byW[w]=(byW[w]||0)+v[1]}
   return {u:Object.entries(byU).sort((a,b)=>b[1].length-a[1].length),c:Object.entries(byC).sort((a,b)=>b[1].length-a[1].length),w:Object.entries(byW).sort((a,b)=>b[1]-a[1]).slice(0,15)}}
 /* compétences : par type d'exercice, et par famille de sons */
-const COMPS=[["Comprendre un mot entendu",[1]],["Lire des mots",[2]],["Repérer un son ou une écriture",[3]],["Écrire des mots",[5]],["Tracer en attaché",[12]],["Lire à voix haute",[13]],
+const COMPS=[["Comprendre un mot entendu",[1]],["Lire des mots",[2]],["Repérer un son ou une écriture",[3]],["Écrire des mots",[5]],["Tracer en attaché",[12]],
   ["Le ou la",[4]],["Nom ou verbe",[6]],["L'adjectif",[7]],["Singulier ou pluriel (il / ils)",[8]],["Accorder le verbe (je, nous, vous…)",[9]],["Les déterminants",[10]],["Les natures des mots",[11]]];
-const NLECT=6; /* les 4 premières : lecture ; les autres : grammaire (chaque période ajoute la sienne) */
+const NLECT=5; /* les 4 premières : lecture ; les autres : grammaire (chaque période ajoute la sienne) */
 const compPer=ks=>{const wi=WORLDS.findIndex((w,i)=>ks.some(k=>GSETS[w.id].includes(k)));return wi<0?"":"P"+(wi+1)};
 const SONFAM=[["Les voyelles",u=>["a","i","o","u","e","y","é","è"].includes(u)],["Les consonnes",u=>/^(l|r|f|j|v|p|t|b|d|m|n|s|z|c|k|g)$/.test(u)],
   ["Les sons composés (ou, ch, an, oi…)",u=>/^(ou|eu|fr|fl|ch|qu|gu|an|en|on|in|oi|oin|au|eau|un|ai|ei)$/.test(u)],["Les écritures complexes (ph, ç, ill, ay…)",u=>!/^g\d+$/.test(u)]];
