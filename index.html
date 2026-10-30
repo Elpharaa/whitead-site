@@ -3799,7 +3799,19 @@ function marelleModel(txt){const key="#"+txt;if(MCACHE[key])return MCACHE[key];
       const link=[];for(let u=1;u<Math.ceil(dj/6);u++)link.push([E[0]+(J[0]-E[0])*u*6/dj,E[1]+(J[1]-E[1])*u*6/dj]);
       return [...P.slice(0,i+1),...P.slice(k+1),...link,...P.slice(i,t+1)]}
     return st};
-  const body=noRetrace(strokes.filter(s=>!isMark(s)).map(exitLast)),marks=strokes.filter(isMark).map(s=>{const a=s[0],b=s[s.length-1];
+  /* boucle du bas (g, j, y, z) : on descend par la tige à droite, on tourne à gauche, on remonte (sens des aiguilles d'une montre) ; boucle à droite (f) : l'inverse */
+  const loopDir=st=>{const P=resample(st,6),n=P.length;
+    /* boucle qui ne se referme pas exactement (z) : on regarde le passage sous la ligne */
+    let a=-1,b=-1;for(let j=0;j<n;j++){if(P[j][1]<-30){if(a<0)a=j;b=j}else if(a>=0&&b-a>40)break;else if(a>=0&&P[j][1]>=-30&&b-a<=40){a=-1;b=-1}}
+    if(a>=0&&b-a>40&&Math.min(...P.slice(a,b+1).map(q=>q[1]))<-200&&Math.hypot(P[a][0]-P[b][0],P[a][1]-P[b][1])<70){const seg=P.slice(a,b+1);
+      let A=0,cx=0;for(let j=1;j<seg.length;j++){A+=seg[j-1][0]*seg[j][1]-seg[j][0]*seg[j-1][1];cx+=seg[j][0]}cx/=seg.length;
+      const left=cx<Math.max(P[a][0],P[b][0])-5,want=left?-1:1;if(Math.sign(A)!==want&&Math.abs(A)>2000)return [...P.slice(0,a),...seg.slice().reverse(),...P.slice(b+1)]}
+    for(let i=0;i<n;i++){if(P[i][1]<-60||P[i][1]>60)continue;
+      for(let k=n-1;k>i+30;k--){if(Math.hypot(P[k][0]-P[i][0],P[k][1]-P[i][1])>22)continue;const seg=P.slice(i,k+1);if(Math.min(...seg.map(q=>q[1]))>-150)continue;
+        let A=0,cx=0;for(let j=1;j<seg.length;j++){A+=seg[j-1][0]*seg[j][1]-seg[j][0]*seg[j-1][1];cx+=seg[j][0]}cx/=seg.length;
+        const left=cx<P[i][0]-5,want=left?-1:1;if(Math.sign(A)!==want&&Math.abs(A)>2000)return [...P.slice(0,i),...seg.slice().reverse(),...P.slice(k+1)];return st}}
+    return st};
+  const body=noRetrace(strokes.filter(s=>!isMark(s)).map(exitLast).map(loopDir)),marks=strokes.filter(isMark).map(s=>{const a=s[0],b=s[s.length-1];
     const flip=Math.abs(a[1]-b[1])>40?a[1]<b[1]:a[0]>b[0];return flip?s.slice().reverse():s}).sort((A,B)=>A[0][0]-B[0][0]);
   /* petits bouts d'accent coupés (ê) : on les enlève s'ils touchent un autre accent */
   const marks2=marks.filter(m=>!(plen(m)<22&&marks.some(o=>o!==m&&plen(o)>=22&&o.some(q=>Math.hypot(q[0]-m[0][0],q[1]-m[0][1])<45))));
