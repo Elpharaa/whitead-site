@@ -3288,6 +3288,8 @@ const HATS=[
  {k:"fleurs",n:"Couronne de fleurs",at:75,s:[[24,32,"#e05a7a"],[34,26,"#ffd35c"],[44,23,"#6fc3e8"],[56,23,"#e8574c"],[66,26,"#8a5fbf"],[76,32,"#f29a4a"]].map(([x,y,c])=>`<circle cx="${x}" cy="${y}" r="6" fill="${c}"/><circle cx="${x}" cy="${y}" r="2" fill="#fff" class="n"/>`).join("")},
  {k:"haut",n:"Chapeau haut-de-forme",at:90,s:`<rect x="22" y="30" width="56" height="7" rx="3" fill="#4a4a4a"/><rect x="34" y="2" width="32" height="30" fill="#4a4a4a"/><rect x="34" y="21" width="32" height="6" fill="#e8574c"/>`},
  {k:"licorne",n:"Corne de licorne",at:105,s:`<path d="M43 32 L50 0 L57 32Z" fill="#f4c2c6"/><path d="M45 24 L55 20 M46 15 L54 12" fill="none" style="stroke:#e05a7a;stroke-width:2.5"/><path d="M28 32 Q34 18 40 30Z M72 32 Q66 18 60 30Z" fill="#fff"/>`}];
+/* où poser le chapeau (haut de la tête) et ce qui va au cou, pour chaque animal : [x, y, taille, x cou, y cou, taille cou] */
+const AVPOS={"lapin": [50, 51, 0.85, 50, 87, 0.85], "renard": [50, 45, 0.85, 50, 83, 0.7], "ours": [50, 42, 1, 50, 87, 0.9], "lion": [50, 31, 1.05, 50, 92, 0.9], "cochon": [50, 40, 0.95, 50, 87, 0.9], "grenouille": [50, 45, 0.65, 50, 86, 0.9], "hibou": [50, 39, 0.9, 50, 72, 0.75], "pieuvre": [50, 33, 0.85, 50, 63, 0.8], "singe": [50, 38, 0.95, 50, 87, 0.9], "poussin": [50, 40, 0.95, 50, 62, 0.8], "phoque": [71, 44, 0.5, 68, 63, 0.55], "chouette": [50, 36, 0.95, 50, 74, 0.8], "chat": [50, 40, 1, 50, 72, 0.85], "chien": [50, 45, 0.85, 50, 84, 0.7], "koala": [50, 41, 0.9, 50, 87, 0.9], "souris": [50, 46, 0.75, 50, 82, 0.7], "hérisson": [65, 51, 0.5, 61, 75, 0.5], "écureuil": [61, 46, 0.5, 60, 63, 0.5], "girafe": [50, 42, 0.75, 50, 69, 0.6], "éléphant": [50, 38, 0.8, 50, 76, 0.6], "zèbre": [50, 37, 0.6, 50, 86, 0.7], "pingouin": [50, 30, 0.8, 50, 47, 0.7], "tortue": [76, 57, 0.4, 73, 70, 0.4], "dauphin": [68, 50, 0.5, 66, 66, 0.5], "vache": [50, 43, 0.9, 50, 88, 0.85], "mouton": [50, 34, 1, 50, 90, 0.9], "canard": [58, 36, 0.55, 56, 60, 0.55], "kangourou": [60, 44, 0.45, 56, 57, 0.5], "suricate": [50, 36, 0.85, 50, 61, 0.7], "paon": [50, 42, 0.4, 50, 58, 0.45]};
 /* accessoires (plus tard que les chapeaux) : placés sur les yeux ou au cou de chaque animal */
 const EYES={"lapin":[50,62.7,6.7],"renard":[50,55.3,7.4],"ours":[50,59,8.1],"lion":[50,58.3,5.9],"cochon":[50,56,8.9],"grenouille":[50.4,46,13.4],"hibou":[50,53.5,7.4],"pieuvre":[50,51.6,7.4],"singe":[50,58.3,6.7],"poussin":[50,54.6,6.7],"phoque":[71,50,0],"chouette":[50.4,53.5,7.4],"chat":[50,51.6,7.4],"chien":[50,56.8,6.7],"koala":[50,57.5,8.9],"souris":[50,60.5,5.9],"hérisson":[64.8,63.4,0],"écureuil":[62.6,50.1,0],"girafe":[50,52.3,5.9],"éléphant":[50,53.1,7.4],"zèbre":[50,56,6.7],"pingouin":[50.4,38.6,5.1],"tortue":[78.1,61.2,0],"dauphin":[66.3,53.8,0],"vache":[50,56,7.4],"mouton":[50.3,59.4,4.4],"canard":[60.4,44.2,0],"kangourou":[58.9,44.2,0],"suricate":[50,47.2,7.4],"paon":[50,48.6,0]};
 function glasses(av,fill,frame){const [x,y,w]=EYES[av]||[50,55,7],r=Math.max(4.6,w*.8);
@@ -3297,11 +3299,11 @@ function mask(av){const [x,y,w]=EYES[av]||[50,55,7],r=Math.max(4.6,w*.8),W=w+r+3
   return `<path d="M${x-W} ${y-2} Q${x} ${y-r-6} ${x+W} ${y-2} Q${x+W} ${y+r+2} ${x} ${y+2} Q${x-W} ${y+r+2} ${x-W} ${y-2}Z" fill="#e8574c"/>`+(w<3?`<circle cx="${x}" cy="${y}" r="2.6" fill="#fff" class="n"/>`:`<circle cx="${x-w}" cy="${y}" r="2.6" fill="#fff" class="n"/><circle cx="${x+w}" cy="${y}" r="2.6" fill="#fff" class="n"/>`)}
 const ACCS=[
  {k:"lunettes",n:"Lunettes",at:50,f:av=>glasses(av,"rgba(214,236,250,.55)","#2b2b2b")},
- {k:"noeud",n:"Nœud papillon",at:65,f:()=>`<path d="M50 90 L36 82 L36 98Z M50 90 L64 82 L64 98Z" fill="#e8574c"/><circle cx="50" cy="90" r="4" fill="#c9403a"/>`},
+ {k:"noeud",neck:1,n:"Nœud papillon",at:65,f:()=>`<path d="M50 90 L36 82 L36 98Z M50 90 L64 82 L64 98Z" fill="#e8574c"/><circle cx="50" cy="90" r="4" fill="#c9403a"/>`},
  {k:"soleil",n:"Lunettes de soleil",at:80,f:av=>glasses(av,"#2b2b2b","#2b2b2b")},
- {k:"echarpe",n:"Écharpe",at:95,f:()=>`<path d="M28 84 Q50 94 72 84 L74 92 Q50 102 26 92Z" fill="#8a5fbf"/><path d="M60 92 L66 100 L56 100Z" fill="#8a5fbf"/><path d="M34 88 L36 94 M44 91 L45 97 M54 91 L54 97" fill="none" style="stroke:#fff;stroke-width:2"/>`},
+ {k:"echarpe",neck:1,n:"Écharpe",at:95,f:()=>`<path d="M28 84 Q50 94 72 84 L74 92 Q50 102 26 92Z" fill="#8a5fbf"/><path d="M60 92 L66 100 L56 100Z" fill="#8a5fbf"/><path d="M34 88 L36 94 M44 91 L45 97 M54 91 L54 97" fill="none" style="stroke:#fff;stroke-width:2"/>`},
  {k:"masque",n:"Masque de super-héros",at:115,f:av=>mask(av)},
- {k:"medaille",n:"Médaille d'or",at:135,f:()=>`<path d="M40 78 L50 90 L60 78" fill="none" style="stroke:#2f8fc4;stroke-width:5"/><circle cx="50" cy="92" r="7" fill="#ffd35c"/>`+starP(50,92,3.5,"#f2b84a")}];
+ {k:"medaille",neck:1,n:"Médaille d'or",at:135,f:()=>`<path d="M40 78 L50 90 L60 78" fill="none" style="stroke:#2f8fc4;stroke-width:5"/><circle cx="50" cy="92" r="7" fill="#ffd35c"/>`+starP(50,92,3.5,"#f2b84a")}];
 /* couleur du contour de l'avatar (encore plus tard) */
 const RINGS=[{k:"rouge",c:"#e8574c",at:120},{k:"bleu",c:"#2f8fc4",at:120},{k:"vert",c:"#4f9f45",at:120},{k:"violet",c:"#8a5fbf",at:150},{k:"rose",c:"#e05a7a",at:150},{k:"or",c:"#ffc12e",at:180},{k:"arc",c:"arc",at:210,n:"Arc-en-ciel"}];
 function ringSvg(k){const r=RINGS.find(x=>x.k===k);if(!r)return "";
@@ -3316,7 +3318,10 @@ const NOAV=svg(`<circle cx="50" cy="50" r="40" fill="#ece8d8"/><circle cx="50" c
 function avFull(av,look){if(!av||!ARTDEF(av))return NOAV;const L=typeof look==="string"?{hat:look}:(look||{});
   const h=HATS.find(x=>x.k===L.hat),a=ACCS.find(x=>x.k===L.acc);
   if(!h&&!a)return svg(ART(av)+ringSvg(L.ring));
-  return svg(`<g transform="translate(13 22) scale(.74)">${ART(av)}</g>`+(a?a.f(av):"")+(h?h.s:"")+ringSvg(L.ring))}
+  const P=AVPOS[av]||[50,33,1,50,86,1];
+  const acc=a?(a.neck?`<g transform="translate(${P[3]} ${P[4]}) scale(${P[5]}) translate(-50 -86)">${a.f(av)}</g>`:a.f(av)):"";
+  const hat=h?`<g transform="translate(${P[0]} ${P[1]}) scale(${P[2]}) translate(-50 -33)">${h.s}</g>`:"";
+  return svg(`<g transform="translate(13 22) scale(.74)">${ART(av)}</g>`+acc+hat+ringSvg(L.ring))}
 const myAv=()=>me()?avFull(me().av,lookOf(me())):"";
 const totalStars=()=>Object.values(best||{}).reduce((a,b)=>a+(+b||0),0);
 const unlockedBy=n=>me()&&me().unlockAll?999:n;
