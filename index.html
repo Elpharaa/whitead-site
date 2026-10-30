@@ -648,6 +648,7 @@ body.racing #mascot,body:has(.prog,.imgadmin,.sndadmin,.board,.bdsetup,.tlist,.s
 .lheard{min-height:1.4em;margin:2px 0 0;text-align:center;font-size:18px;color:#7a7461;font-style:italic}
 .rdmic.wait{opacity:.6;filter:grayscale(.6)}
 .micwhy{margin:4px auto 0;max-width:560px;text-align:center;font-size:14px;color:#8a5a12;background:#fff4dc;border-radius:12px;padding:6px 10px}.linkbtn{border:0;background:none;color:#2f5bd9;text-decoration:underline;font:inherit;font-weight:700}
+.lrd .ldet{color:#8a8470;font-weight:600;font-size:.62em;margin-right:.08em;white-space:pre}
 .lrd.w{font-size:clamp(54px,11vw,104px)}.lrd .lw{display:inline-block;padding:0 4px;border-radius:12px;transition:background .2s,color .2s}
 .lrd .lw.g{background:#d9f3d0;color:#2d7a28}.lrd .lw.o{background:#ffe2c4;color:#b4560f;text-decoration:underline wavy #f0883a}
 .lrd .sy0{color:#2f5bd9}.lrd .sy1{color:#e2534a}.lrd.ok{background:#eaf8e4;border-color:#3fae49}.lrd.no{animation:shake .45s}
@@ -1976,6 +1977,8 @@ const WRE=/^[a-zàâäéèêëîïôöûùüçœ]+$/;
 function lireWords(wi){const ok=x=>WRE.test(x)&&x.length>=2&&x.length<=9&&hasA(wkey(x))&&hasImg(x)&&isNoun(x);
   const mine=[...new Set([1,2,3].flatMap(l=>levelWords(wi,l)))].filter(x=>ok(x)&&readable(x,wi,3));
   return [...new Set([...mine,...readPool(wi,3,ok)])].slice(0,24)}
+/* « la roue » se reconnaît bien mieux que « roue » tout seul */
+const detOf=w=>/^[aeiouyéèêàâîôûh]/i.test(w)?"l’":GENDER[w]==="f"?"la ":"le ";
 const lirePhr=wi=>(READT[WORLDS[wi].id]||[]).filter(s=>hasA("_rd_"+s));
 const lireStory=wi=>(READT["S_"+WORLDS[wi].id]||[]).filter(s=>hasA("_rd_"+s));
 const STORY_T={ferme:"Lou le loup",foret:"Le petit chat",montagne:"Le bateau de Simon",savane:"Le singe et la girafe",mer:"Le petit crabe"};
@@ -2017,7 +2020,7 @@ function lireRead(){const S0=G,it=S0.items[S0.i],w=S0.w,isW=S0.lk==="mot",self=S
   app.innerHTML=`<section class="game lgame" style="--c:${w.c};--on:${w.on}">
    <div class="gtop"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><span class="gtitle">${story?`<b>${esc(STORY_T[w.id]||"Une histoire")}</b>`:"<b>Je lis à Pompon</b>"}</span><span class="ldots">${S0.items.map((x,i)=>`<i class="${i<S0.i?"on":i===S0.i?"cur":""}"></i>`).join("")}</span></div>
    ${pics.length?`<div class="lpics${story?"":" hide"}" id="lpics">${pics.map(p=>`<span>${svg(ART(p))}</span>`).join("")}</div>`:""}
-   <div class="lrd${isW?" w":""}" id="lcard">${isW&&it.miss>=1?sylls(it.t).map((s,i)=>`<span class="sy${i%2}">${esc(s)}</span>`).join(""):tw.map((x,i)=>`<span class="lw" data-i="${i}">${esc(x)}</span>`).join(" ")}${isW?"":/[.!?]$/.test(it.t)?"":"."}</div>
+   <div class="lrd${isW?" w":""}" id="lcard">${isW?`<span class="ldet">${esc(detOf(it.t))}</span>`:""}${isW&&it.miss>=1?sylls(it.t).map((s,i)=>`<span class="sy${i%2}">${esc(s)}</span>`).join(""):tw.map((x,i)=>`<span class="lw" data-i="${i}">${esc(x)}</span>`).join(" ")}${isW?"":/[.!?]$/.test(it.t)?"":"."}</div>
    <div class="rdbar">${self?`<button class="rdmic self" id="lhear" aria-label="Écouter">${SPEAKER}</button>`:`<button class="rdmic" id="lmic" aria-label="Lire au micro">${MIC}<span class="rdwave"><i></i><i></i><i></i></span></button>`}
     <button class="mini" id="lhelp" aria-label="Écouter" ${it.miss>=2&&!self?"":"hidden"}>${SPEAKER}</button></div>
    <div class="rdself" id="lself" hidden><button class="btn" id="lyes" style="--c:#4f9f45">J'avais bien lu</button><button class="btn alt" id="lno">Je me suis trompé</button></div>
