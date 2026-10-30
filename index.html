@@ -3462,7 +3462,9 @@ let VW=null; /* mots de chaque période (chaque mot n'apparaît que dans la 1re 
 function voiceWords(){if(VW)return VW;const seen=new Set();
   VW=WORLDS.map((w,wi)=>{const l=[...new Set([...themeWords(wi),...[1,2,3].flatMap(lv=>levelWords(wi,lv))])].filter(k=>(AUDIO[k]||AIDX[k])&&!seen.has(k));l.forEach(k=>seen.add(k));return l.sort((a,b)=>a.localeCompare(b,"fr"))});return VW}
 let SNDV={tab:"L",f:"all",q:""},RECW=null;
-function sndItems(){const L=SNDV.tab==="L"?SND_LETTERS.map(([k,tip])=>({key:"_ls_"+k,lab:k==="k"?"c k q":k,tip})):voiceWords()[SNDV.tab].map(k=>({key:k,lab:k}));
+const sylKeys=()=>{const o=new Set();Object.values(WSETS).forEach(S0=>(S0.syl||[]).forEach(x=>o.add("_sy_"+x)));Object.keys(AIDX).concat(Object.keys(AUDIO)).forEach(k=>{if(k.startsWith("_sy_"))o.add(k)});
+  const ex=k=>{const t=k.slice(4),e=wExample({k:"syl",t});return e?t+"… comme dans "+e:""};return [...o].sort((a,b)=>a.localeCompare(b,"fr")).map(k=>({key:k,lab:k.slice(4),tip:ex(k)}))};
+function sndItems(){const L=SNDV.tab==="L"?SND_LETTERS.map(([k,tip])=>({key:"_ls_"+k,lab:k==="k"?"c k q":k,tip})):SNDV.tab==="S"?sylKeys():voiceWords()[SNDV.tab].map(k=>({key:k,lab:k}));
   const q=SNDV.q.trim().toLowerCase();return L.filter(x=>(!q||x.lab.toLowerCase().includes(q))&&(SNDV.f==="all"||(SNDV.f==="todo")!==REC(x.key)))}
 function sndRow(x){const mine=REC(x.key),pend=RECW&&RECW.k===x.key;
   return `<div class="vrow${mine?" mine":""}${pend?" pend":""}" data-k="${esc(x.key)}"><b class="sw2">${esc(x.lab)}</b>${x.tip?`<small>${esc(x.tip)}</small>`:""}
@@ -3470,17 +3472,17 @@ function sndRow(x){const mine=REC(x.key),pend=RECW&&RECW.k===x.key;
    :`<button class="ibtn alt" data-a="play" title="${mine?"Écouter ma voix":"Écouter la voix de l'ordinateur"}">▶</button><button class="ibtn rec" data-a="rec" aria-label="Enregistrer">🎙️</button>${mine?`<span class="stag ok">ma voix</span><button class="ibtn alt small" data-a="reset" title="Remettre la voix de l'ordinateur">↺</button>`:`<span class="stag">ordinateur</span>`}`}</span></div>`}
 function soundsScreen(){
   document.body.classList.add("home");G=null;
-  const VWs=voiceWords(),all=SNDV.tab==="L"?SND_LETTERS.map(([k])=>"_ls_"+k):VWs[SNDV.tab],done=all.filter(REC).length;
+  const VWs=voiceWords(),all=SNDV.tab==="L"?SND_LETTERS.map(([k])=>"_ls_"+k):SNDV.tab==="S"?sylKeys().map(x=>x.key):VWs[SNDV.tab],done=all.filter(REC).length;
   app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><h1>Voix</h1><span></span></header>
    <section class="who sndadmin"><p class="imghelp">🎙️ enregistre ta voix · ▶ écoute · <b>✓ Garder</b> la met sur tout le site. Sans enregistrement, c'est la voix de l'ordinateur. L'enregistrement s'arrête tout seul quand tu as fini de parler.</p>
-    <div class="ptabs"><button class="ptab" data-t="L" aria-pressed="${SNDV.tab==="L"}">Lettres</button>${WORLDS.map((w,i)=>`<button class="ptab" data-t="${i}" aria-pressed="${SNDV.tab===i}" style="--c:${w.c};--on:${w.on}">${w.p} · ${w.name.replace(/^(La |Le )/,"")}</button>`).join("")}</div>
+    <div class="ptabs"><button class="ptab" data-t="L" aria-pressed="${SNDV.tab==="L"}" style="--c:#2b2b2b;--on:#fff">Lettres</button><button class="ptab" data-t="S" aria-pressed="${SNDV.tab==="S"}" style="--c:#2b2b2b;--on:#fff">Syllabes</button>${WORLDS.map((w,i)=>`<button class="ptab" data-t="${i}" aria-pressed="${SNDV.tab===i}" style="--c:${w.c};--on:${w.on}">${w.p} · ${w.name.replace(/^(La |Le )/,"")}</button>`).join("")}</div>
     <div class="vbar"><input id="sq" type="search" placeholder="Chercher un mot…" value="${esc(SNDV.q)}" aria-label="Chercher un mot">
      <span class="sfil">${[["all","Tous"],["todo","À faire"],["done","Faits"]].map(([f,l])=>`<button class="chip" data-f="${f}" aria-pressed="${SNDV.f===f}">${l}</button>`).join("")}</span>
      <span class="scount"><b>${done}</b> / ${all.length} enregistrés</span></div>
     <p class="err" id="sndmsg" style="min-height:0;margin:0"></p>
     <div class="slist" id="slist">${sndItems().map(sndRow).join("")||'<p class="imghelp">Aucun mot.</p>'}</div></section>`;
   document.getElementById("back").onclick=()=>{RECW=null;periodsScreen()};
-  app.querySelectorAll(".ptab").forEach(b=>b.onclick=()=>{RECW=null;SNDV.tab=b.dataset.t==="L"?"L":+b.dataset.t;SNDV.q="";soundsScreen()});
+  app.querySelectorAll(".ptab").forEach(b=>b.onclick=()=>{RECW=null;SNDV.tab=b.dataset.t==="L"||b.dataset.t==="S"?b.dataset.t:+b.dataset.t;SNDV.q="";soundsScreen()});
   app.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{SNDV.f=b.dataset.f;soundsScreen()});
   const sq=document.getElementById("sq");sq.oninput=()=>{SNDV.q=sq.value;document.getElementById("slist").innerHTML=sndItems().map(sndRow).join("")};
   document.getElementById("slist").onclick=e=>{const b=e.target.closest("[data-a]");if(!b)return;sndAct(b.closest(".vrow").dataset.k,b.dataset.a,b)};
