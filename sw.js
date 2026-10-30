@@ -1,5 +1,5 @@
-/* Pompon au CP : le site continue de marcher sans internet (version ef1ace4b) */
-const CACHE="pompon-ef1ace4b",SONS="pompon-sons",POLICES="pompon-polices",VOIX="pompon-voix";
+/* Pompon au CP : le site continue de marcher sans internet (version ecaf3ec3) */
+const CACHE="pompon-ecaf3ec3",SONS="pompon-sons",POLICES="pompon-polices",VOIX="pompon-voix";
 const CORE=["./","./index.html","./manifest.webmanifest","./icon-192.png","./icon-512.png","./favicon.svg","./favicon-32.png","./apple-touch-icon.png","./marelle.ttf"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>![CACHE,SONS,POLICES,VOIX].includes(k)).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});

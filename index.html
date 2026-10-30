@@ -649,6 +649,7 @@ body.racing #mascot,body:has(.prog,.imgadmin,.sndadmin,.board,.bdsetup,.tlist,.s
 .lheard{min-height:1.4em;margin:2px 0 0;text-align:center;font-size:18px;color:#7a7461;font-style:italic}
 .rdmic.wait{opacity:.6;filter:grayscale(.6)}
 .ldbg{font-size:11px;line-height:1.3;color:#555;background:#f4f1e6;border-radius:8px;padding:6px;margin:4px auto;max-width:94%;white-space:pre-wrap;text-align:left}
+.instcard{background:var(--paper)}.instcard .tsteps{text-align:left;margin:0;padding-left:22px;display:flex;flex-direction:column;gap:8px;font-size:18px}.iic .ic{width:26px;height:26px;vertical-align:-6px}
 .micwhy{margin:4px auto 0;max-width:560px;text-align:center;font-size:14px;color:#8a5a12;background:#fff4dc;border-radius:12px;padding:6px 10px}.linkbtn{border:0;background:none;color:#2f5bd9;text-decoration:underline;font:inherit;font-weight:700}
 .lrd .ldet{color:#8a8470;font-weight:600;font-size:.62em;margin-right:.08em;white-space:pre}
 .wask{margin:0;text-align:center;font:800 clamp(18px,4.4vw,26px) var(--display);display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}.wex{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#6b6553}.wexp .ic{width:46px;height:46px;background:#fff;border:3px solid var(--ink);border-radius:12px;padding:3px}
@@ -2912,7 +2913,7 @@ function classScreen(msg=""){
   app.innerHTML=head(false)+`<section class="who"><h2>Ta classe</h2><p class="step" style="align-self:center">Tape le code de la classe</p>
     <input id="ccode" class="bigcode" maxlength="8" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="CODE" value="${esc(CLASS_CODE)}">
     <span class="err" id="cerr">${esc(msg)}</span><button class="btn" id="cgo" style="--c:#4f9f45">Entrer</button>
-    <button class="adminbtn" id="adm">${KEYI}Enseignant</button></section>`;
+    <button class="adminbtn" id="adm">${KEYI}Enseignant</button>${instBtn()}</section>`;wireInst();
   const inp=document.getElementById("ccode");inp.oninput=()=>{inp.value=inp.value.toUpperCase().replace(/[^A-Z0-9]/g,"")};
   const go=async()=>{const c=inp.value.trim();if(c.length<4){document.getElementById("cerr").textContent="Le code a 6 lettres.";return}
     document.getElementById("cgo").disabled=true;
@@ -3073,7 +3074,7 @@ async function teacherHome(){
 async function loadClasses(){TCLASSES=await tq("/rest/v1/classes?select=id,name,code,settings&order=created_at");if(!TCLASSES.find(c=>c.id===TCUR))TCUR=TCLASSES[0]&&TCLASSES[0].id;LS("pompon-tclass",TCUR);return TCLASSES}
 async function studentsScreen(sort){
   document.body.classList.add("home");window.scrollTo(0,0);G=null;sort=sort||LS("pompon-tsort")||"name";
-  app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour au jeu">${MAPI}</button><h1>Mes élèves</h1><span class="tconn"><small>${esc(TEACH&&TEACH.email||"")}</small><button class="adminbtn" id="out">Se déconnecter</button></span></header><section class="who tlist"><p class="step">Chargement…</p></section>`;
+  app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour au jeu">${MAPI}</button><h1>Mes élèves</h1><span class="tconn"><small>${esc(TEACH&&TEACH.email||"")}</small>${instBtn()}<button class="adminbtn" id="out">Se déconnecter</button></span></header><section class="who tlist"><p class="step">Chargement…</p></section>`;wireInst();
   document.getElementById("back").onclick=()=>periodsScreen();document.getElementById("out").onclick=teacherOut;
   const box=app.querySelector(".tlist");
   try{await loadClasses()}catch(e){box.innerHTML=`<p class="err">Impossible de charger les classes (${esc(e.message)}).</p>`;return}
@@ -3973,6 +3974,22 @@ document.addEventListener("pointerdown",e=>{const el=e.target.closest(FXSEL);if(
     s.style.left=cx+"px";s.style.top=cy+"px";document.body.appendChild(s);
     s.animate([{transform:"translate(-50%,-50%) scale(.4) rotate(0)",opacity:0},{opacity:1,offset:.25},{transform:`translate(calc(-50% + ${Math.cos(ang)*d}px),calc(-50% + ${Math.sin(ang)*d}px)) scale(1) rotate(${(Math.random()-.5)*160}deg)`,opacity:0}],{duration:650+Math.random()*200,easing:"cubic-bezier(.2,.8,.3,1)"}).onfinish=()=>s.remove()}
 },{passive:true});
+/* ---- installer l'appli sur la tablette / le téléphone ---- */
+let INSTALLP=null;window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();INSTALLP=e;document.querySelectorAll(".instbtn").forEach(b=>b.hidden=false)});
+window.addEventListener("appinstalled",()=>{INSTALLP=null;document.querySelectorAll(".instbtn").forEach(b=>b.hidden=true)});
+const isInstalled=()=>!!(navigator.standalone||matchMedia("(display-mode: standalone)").matches);
+const instBtn=()=>isInstalled()?"":`<button class="adminbtn instbtn" type="button">${svg('<rect x="28" y="8" width="44" height="84" rx="9" fill="#fff"/><path d="M50 26 V62 M36 50 L50 64 L64 50" fill="none" style="stroke:#4f9f45;stroke-width:8;stroke-linecap:round;stroke-linejoin:round"/>')}Installer l'appli</button>`;
+function wireInst(){document.querySelectorAll(".instbtn").forEach(b=>b.onclick=installApp)}
+async function installApp(){
+  if(INSTALLP){INSTALLP.prompt();try{await INSTALLP.userChoice}catch(e){}INSTALLP=null;return}
+  const ios=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  const share=svg('<rect x="22" y="38" width="56" height="54" rx="8" fill="none" style="stroke:#2f8fc4;stroke-width:6"/><path d="M50 10 V60 M34 26 L50 10 L66 26" fill="none" style="stroke:#2f8fc4;stroke-width:6;stroke-linecap:round;stroke-linejoin:round"/>');
+  const o=document.createElement("div");o.className="memo";o.style.setProperty("--c","#4f9f45");o.style.setProperty("--on","#fff");o.innerHTML=`<div class="mcard instcard" role="dialog" aria-label="Installer l'appli"><p class="mtitle">Installer Pompon sur cet appareil</p>
+   ${ios?`<ol class="tsteps"><li>Ouvre ce site dans <b>Safari</b>.</li><li>Touche le bouton <b>Partager</b> <span class="iic">${share}</span> (en bas ou en haut de l'écran).</li><li>Choisis <b>« Sur l'écran d'accueil »</b>, puis <b>Ajouter</b>.</li></ol>`
+   :`<ol class="tsteps"><li>Ouvre le <b>menu</b> du navigateur (les <b>⋮</b> en haut à droite).</li><li>Choisis <b>« Installer l'application »</b> ou <b>« Ajouter à l'écran d'accueil »</b>.</li></ol>`}
+   <p class="imghelp">L'icône de Pompon apparaît ensuite avec les autres applis, et le site s'ouvre en plein écran, même sans internet.</p>
+   <div class="mbtns"><button class="btn" id="instok">J'ai compris</button></div></div>`;
+  document.body.appendChild(o);o.querySelector("#instok").onclick=()=>o.remove();o.onclick=e=>{if(e.target===o)o.remove()}}
 /* démarrage : enseignant connecté, élève connecté, ou choix de la classe */
 async function boot(){
   SIDX=LS("pompon-voix-idx")||{};loadVoiceIdx();
