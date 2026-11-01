@@ -677,6 +677,9 @@ body.racing #mascot,body:has(.prog,.imgadmin,.sndadmin,.scadmin,.tcadmin,.board,
 .tgrp{display:flex;flex-direction:column;gap:6px;flex:1 1 300px}.tgrp>b{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:#7a7461}.tgrp.adm{border-left:3px dashed #e3ddc8;padding-left:14px}
 .trow{display:flex;flex-wrap:wrap;gap:8px}.tbtn{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border:3px solid var(--ink);border-radius:14px;background:#fffdf6;font-weight:800;font-size:16px;color:var(--ink);box-shadow:0 3px 0 rgba(43,43,43,.18)}
 .tbtn .ic{width:26px;height:26px}.tbtn:hover{background:#fff6d8}@media (max-width:640px){.tgrp.adm{border-left:0;padding-left:0;border-top:3px dashed #e3ddc8;padding-top:8px}.tbtn{font-size:14px;padding:6px 10px}}
+.bdtypes{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:680px}.bdtypes p{width:100%;text-align:center;margin:0;font-weight:700}.bdtype{padding:8px 14px;border:3px solid var(--ink);border-radius:999px;background:#fff;font:700 16px var(--body)}.bdtype[aria-pressed="true"]{background:#4f9f45;color:#fff}
+.bdrep{max-width:900px;align-items:stretch}.bdrep h2 small{font-size:16px;color:#6b6553;font-weight:400}.bdsum{font-size:20px}.bdsum b{font-size:30px}.bdtab td,.bdtab th{text-align:left;padding:6px 10px}.bdbar{display:inline-block;width:90px;height:12px;border-radius:6px;background:#eee;vertical-align:middle;overflow:hidden}.bdbar i{display:block;height:100%}.bdkid{display:flex;align-items:center;gap:8px}.bdkid .av{width:34px;height:34px}
+@media print{.noprint{display:none!important}}
 .bdmodes{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:640px}.bdmode{display:flex;flex-direction:column;gap:2px;padding:14px;border:4px solid var(--ink);border-radius:20px;background:#fff;font-family:var(--display)}.bdmode b{font-size:22px}.bdmode small{font-family:var(--body);color:#6b6553}.bdmode[aria-pressed="true"]{background:#e6f6df;box-shadow:0 6px 0 #4f9f45}
 .bdprompt.gram{display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:center}.bdprompt.gram .bdword.long{font-size:clamp(34px,5vw,60px)}.bdimg.many{display:inline-flex;gap:6px}.bdimg.many .ic{width:110px;height:110px}
 .micwhy{margin:4px auto 0;max-width:560px;text-align:center;font-size:14px;color:#8a5a12;background:#fff4dc;border-radius:12px;padding:6px 10px}.linkbtn{border:0;background:none;color:#2f5bd9;text-decoration:underline;font:inherit;font-weight:700}
@@ -4244,10 +4247,12 @@ function genLiveQs(wi,n){const ok=x=>/^[a-zàâäéèêëîïôöûùüçœ]+$/.
     const t=pool[i%pool.length],ch=pick3(t,pool);if(ch.length<3)continue;qs.push({type:type==="sound"?"pic":type,w:t,choices:ch,answer:ch.indexOf(t)})}
   return qs}
 /* questions de grammaire pour le tableau (selon la période) */
-function genGramQs(wi,n){const allL=k=>[...new Set([1,2,3].flatMap(l=>(GRAM[k]&&GRAM[k][l])||[]))];
+const GTYPES=[["genre","Le ou la ?",0],["nv","Nom ou verbe ?",1],["plN","Un ou plusieurs ?",2],["ils","il / ils + verbe",2],["det","un / une / des",3],["acc","nous / vous / ils + verbe",3],["ana","Nature d'un mot dans une phrase",4]];
+const gDefTypes=wi=>GTYPES.filter(t=>t[2]<=wi&&!(t[0]==="genre"&&wi>=3)).map(t=>t[0]);
+function genGramQs(wi,n,want){const allL=k=>[...new Set([1,2,3].flatMap(l=>(GRAM[k]&&GRAM[k][l])||[]))];
   const nouns=shuffle([...new Set([1,2,3].flatMap(l=>readPool(wi,l,x=>isNoun(x)&&hasImg(x)&&hasA(wkey(x))&&!elided(x)&&/^[a-zàâçéèêëîïôûœ]+$/.test(x)&&!/([sxz]|al|eau|eu|au)$/.test(x))))]);
   const verbs=shuffle(Object.keys(BANK.ALL).filter(x=>isVerb(x)&&/^(il|elle) /.test(x)&&ARTDEF(x)&&hasA(x)&&readable(x,wi,3)));
-  const T=wi>=3?[]:["genre"];if(wi>=1)T.push("nv");if(wi>=2)T.push("plN","ils");if(wi>=3)T.push("det","acc");if(wi>=4)T.push("ana");
+  const T=shuffle((want&&want.length?want:gDefTypes(wi)).slice());
   const qs=[];let ni=0,vi=0;
   for(let i=0;qs.length<n&&i<n*4;i++){const t=T[i%T.length];
     if(t==="genre"&&nouns.length){const x=nouns[ni++%nouns.length];if(!GENDER[x])continue;const ch=["le","la"];qs.push({type:"gram",ask:"Le ou la ?",img:x,word:"… "+x,choices:ch,answer:GENDER[x]==="f"?1:0,say:wkey(x)})}
@@ -4261,20 +4266,23 @@ function genGramQs(wi,n){const allL=k=>[...new Set([1,2,3].flatMap(l=>(GRAM[k]&&
       const others=shuffle(["N","V","D","A"].filter(c=>c!==o.t)).slice(0,2),ch=shuffle([o.t,...others]);qs.push({type:"gram",ask:`« ${o.w} » est :`,word:sentText(s),choices:ch.map(c=>NATS[c].n),answer:ch.indexOf(o.t)})}}
   return qs}
 async function boardScreen(cl,nKids){document.body.classList.add("home");window.scrollTo(0,0);G=null;
-  let wi=Math.max(0,WORLDS.findIndex((w,i)=>!periodDone(i)));if(wi<0)wi=0;let mode=LS("pompon-bdmode")||"voc";
+  let wi=Math.max(0,WORLDS.findIndex((w,i)=>!periodDone(i)));if(wi<0)wi=0;let mode=LS("pompon-bdmode")||"voc";const gsAll=LS("pompon-bdgt")||{};const gsel=()=>{const v=(gsAll[wi]||gDefTypes(wi)).filter(t=>GTYPES.some(g=>g[0]===t&&g[2]<=wi));return v.length?v:gDefTypes(wi)};
   const setup=()=>{app.innerHTML=`<header class="maphead"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><h1>Jouer au tableau</h1><span></span></header>
     <section class="who bdsetup"><div class="bdhero">${pomponBig()}<p>Mets cette page au <b>vidéoprojecteur</b>. Sur les tablettes, un gros bouton « Pompon t'appelle au tableau ! » apparaît : les élèves répondent sur leur tablette.</p></div>
      <div class="ptabs">${WORLDS.map((x,i)=>`<button class="ptab" data-w="${i}" aria-pressed="${i===wi}" style="--c:${x.c};--on:${x.on}">${x.p} · ${x.name.replace(/^(La |Le )/,"")}</button>`).join("")}</div>
      <div class="bdmodes"><button class="bdmode" data-m="voc" aria-pressed="${mode==="voc"}"><b>Vocabulaire</b><small>images, mots et sons</small></button><button class="bdmode" data-m="gram" aria-pressed="${mode==="gram"}"><b>Grammaire</b><small>le/la, nom/verbe, pluriel… selon la période</small></button></div>
+     ${mode==="gram"?`<div class="bdtypes"><p>Quels exercices de grammaire ?</p>${GTYPES.filter(t=>t[2]<=wi).map(t=>`<button class="bdtype" data-t="${t[0]}" aria-pressed="${gsel().includes(t[0])}">${t[1]}</button>`).join("")}</div>`:""}
      <button class="btn big1" id="bdgo" style="--c:#4f9f45">▶ Commencer (8 questions)</button><span class="err" id="bde"></span></section>`;
     document.getElementById("back").onclick=()=>studentsScreen();
     app.querySelectorAll(".ptab").forEach(b=>b.onclick=()=>{wi=+b.dataset.w;setup()});
     app.querySelectorAll(".bdmode").forEach(b=>b.onclick=()=>{mode=b.dataset.m;LS("pompon-bdmode",mode);setup()});
+    app.querySelectorAll(".bdtype").forEach(b=>b.onclick=()=>{const t=b.dataset.t;let v=gsel();v=v.includes(t)?v.filter(x=>x!==t):[...v,t];if(!v.length)return;gsAll[wi]=v;LS("pompon-bdgt",gsAll);setup()});
     document.getElementById("bdgo").onclick=()=>run().catch(e=>{document.getElementById("bde").textContent="Impossible de lancer le jeu ("+e.message+")."})};
   const run=async()=>{
     await tq(`/rest/v1/class_live?class_id=eq.${cl.id}&active=eq.true`,{method:"PATCH",body:{active:false}}).catch(()=>{});
     const r=await tq("/rest/v1/class_live",{method:"POST",prefer:"return=representation",body:{class_id:cl.id,q:-1,phase:"wait"}});const id=(Array.isArray(r)?r[0]:r).id;
-    const qs=mode==="gram"?genGramQs(wi,8):genLiveQs(wi,8),w=WORLDS[wi];let qi=-1,energy=0,timer=null,poll=null,closed=false,ansN=0;
+    const qs=mode==="gram"?genGramQs(wi,8,gsel()):genLiveQs(wi,8),w=WORLDS[wi];let qi=-1,energy=0,timer=null,poll=null,closed=false,ansN=0;
+    const RES=[];let KIDS=[];tq(`/rest/v1/students?select=id,name,avatar,look&class_id=eq.${cl.id}&order=name`).then(x=>{KIDS=x||[]}).catch(()=>{});
     const patch=b=>tq(`/rest/v1/class_live?id=eq.${id}`,{method:"PATCH",body:{...b,updated_at:new Date().toISOString()}});
     const goal=async()=>{try{GOAL_N=+(await tq("/rest/v1/rpc/class_goal_now",{method:"POST",body:{p_class:cl.id}}))||0}catch(e){}};
     const close=async()=>{closed=true;clearInterval(poll);clearTimeout(timer);try{await patch({active:false})}catch(e){}studentsScreen()};
@@ -4282,8 +4290,8 @@ async function boardScreen(cl,nKids){document.body.classList.add("home");window.
     const frame=inner=>{app.innerHTML=`<section class="board" style="--c:${w.c}"><div class="bdtop"><button class="back ico" id="bdx" aria-label="Arrêter">${MAPI}</button><b>Jouer au tableau · ${w.name}</b><span class="bdq">${qi>=0&&qi<qs.length?`Question ${qi+1} / ${qs.length}`:""}</span></div>
       <div class="bdmain">${inner}</div><div class="bddrag">${pomponBig()}<b class="bdscore">${energy}</b><small>bonne${energy>1?"s":""} réponse${energy>1?"s":""} de la classe</small></div></section>`;
       document.getElementById("bdx").onclick=close};
-    const show=async()=>{qi++;if(qi>=qs.length){await patch({phase:"end",energy});await goal();frame(`<div class="bdend">${pomponBig()}<h2>Bravo la classe !</h2><p>${energy} bonnes réponses pendant le jeu</p><button class="btn big1" id="bdfin" style="--c:#4f9f45">Terminer</button></div>`);
-        say("Bravo la classe !","_lv_end");document.getElementById("bdfin").onclick=close;return}
+    const show=async()=>{qi++;if(qi>=qs.length){await patch({phase:"end",energy});await goal();frame(`<div class="bdend">${pomponBig()}<h2>Bravo la classe !</h2><p>${energy} bonnes réponses pendant le jeu</p><div class="row"><button class="btn big1" id="bdbil" style="--c:#2f8fc4">📋 Voir le bilan</button><button class="btn big1" id="bdfin" style="--c:#4f9f45">Terminer</button></div></div>`);
+        say("Bravo la classe !","_lv_end");document.getElementById("bdfin").onclick=close;document.getElementById("bdbil").onclick=()=>boardReport(cl,w,mode,RES,KIDS,close);return}
       const q=qs[qi];await patch({q:qi,phase:"q",question:q,energy});ansN=0;let left=25;
       const gp=x=>`<span class="bdimg${q.many?" many":""}">${q.many?[0,1,2].map(()=>svg(ART(x))).join(""):svg(ART(x))}</span>`;
       const prompt=q.type==="gram"?`<div class="bdprompt gram">${q.img?gp(q.img):""}${q.pron?`<span class="bdimg">${PRONPIC(q.pron)}</span>`:""}${q.word?`<span class="bdword${q.word.length>14?" long":""}">${esc(q.word)}</span>`:""}</div>`:q.type==="word"?`<div class="bdprompt"><span class="bdimg">${svg(ART(q.w))}</span></div>`:q.type==="pic"?`<div class="bdprompt"><span class="bdword">${esc(q.w)}</span></div>`:`<div class="bdprompt"><span class="bdimg">${svg(ART(q.w))}</span><button class="mini" id="bdhear">${SPEAKER}</button></div>`;
@@ -4292,7 +4300,7 @@ async function boardScreen(cl,nKids){document.body.classList.add("home");window.
         <div class="bdfoot"><span class="bdcount" id="bdcount">0 / ${nKids} ont répondu</span><span class="bdtime" id="bdtime">${left}</span><button class="btn" id="bdrev" style="--c:#2f8fc4">Montrer la réponse</button></div>`);
       const hear=document.getElementById("bdhear");if(hear)hear.onclick=()=>play(wkey(q.w));
       if(q.type==="gram"){if(q.say&&hasA(q.say))play(q.say)}else play(q.type==="word"?"_lv_word":q.type==="pic"?"_lv_pic":"_lv_sound",()=>{if(q.type!=="word")setTimeout(()=>play(wkey(q.w)),200)});
-      const reveal=async()=>{clearInterval(poll);clearInterval(timer);let A=[];try{A=await tq(`/rest/v1/class_live_answers?live_id=eq.${id}&q=eq.${qi}&select=choice,ok`)}catch(e){}
+      const reveal=async()=>{clearInterval(poll);clearInterval(timer);let A=[];try{A=await tq(`/rest/v1/class_live_answers?live_id=eq.${id}&q=eq.${qi}&select=choice,ok,student_id`)}catch(e){}RES[qi]={q,A};
         const okN=A.filter(a=>a.ok).length;energy+=okN;await patch({phase:"reveal",energy});await goal();
         const per=[0,1,2].map(i=>A.filter(a=>a.choice===i).length);
         frame(`<h2 class="bdask">${okN?`${okN} bonne${okN>1?"s":""} réponse${okN>1?"s":""} !`:"La bonne réponse :"}</h2>${prompt}
@@ -4306,6 +4314,28 @@ async function boardScreen(cl,nKids){document.body.classList.add("home");window.
     await goal();frame(`<div class="bdend">${pomponBig()}<h2>On joue tous ensemble !</h2><p>Les élèves voient « Pompon t'appelle au tableau ! » sur leur tablette.</p><button class="btn big1" id="bdstart" style="--c:#4f9f45">▶ Première question</button></div>`);
     say("On joue tous ensemble ! Regardez le tableau.","_lv_start");document.getElementById("bdstart").onclick=()=>show()};
   setup()}
+/* bilan du jeu au tableau : question par question, puis élève par élève */
+function boardReport(cl,w,mode,RES,KIDS,done){
+  const lab=q=>q.type==="gram"?`${q.ask} ${q.word&&!/^…/.test(q.word)?"« "+q.word+" »":q.img?(q.many?"(3 images de « "+q.img+" »)":"(image de « "+q.img+" »)"):""}`:q.type==="word"?`Le bon mot : image « ${q.w} »`:q.type==="pic"?`La bonne image : « ${q.w} »`:`Le son dans « ${q.w} »`;
+  const ansT=q=>q.choices[q.answer];
+  const rows=RES.filter(Boolean),tot=rows.reduce((a,r)=>a+r.A.length,0),ok=rows.reduce((a,r)=>a+r.A.filter(x=>x.ok).length,0);
+  const ids=[...new Set(rows.flatMap(r=>r.A.map(a=>a.student_id)))];
+  const kid=id=>KIDS.find(k=>k.id===id)||{name:"Élève",avatar:"lapin"};
+  const studs=ids.map(id=>{const miss=[];let g=0,n=0;rows.forEach((r,i)=>{const a=r.A.find(x=>x.student_id===id);if(a){n++;if(a.ok)g++;else miss.push(i+1)}else miss.push(i+1)});return{k:kid(id),g,n,miss}}).sort((a,b)=>a.g-b.g);
+  const absent=KIDS.filter(k=>!ids.includes(k.id));
+  const pc=(a,b)=>b?Math.round(a/b*100):0,col=p=>p>=75?"#4f9f45":p>=50?"#e8a33a":"#e05a47";
+  app.innerHTML=`<header class="maphead noprint"><button class="back ico" id="back" aria-label="Retour">${MAPI}</button><h1>Bilan du jeu</h1><span></span></header>
+   <section class="who bdrep"><h2>${esc(w.name)} · ${mode==="gram"?"Grammaire":"Vocabulaire"} <small>${new Date().toLocaleDateString("fr-FR")}</small></h2>
+    <p class="bdsum"><b style="color:${col(pc(ok,tot))}">${pc(ok,tot)} %</b> de bonnes réponses (${ok} / ${tot}) · ${ids.length} élève${ids.length>1?"s":""} ont joué</p>
+    <h3 class="sdh">Question par question</h3>
+    <table class="stab bdtab"><tr><th>#</th><th>Question</th><th>Réponse</th><th>Réussite</th></tr>
+    ${rows.map((r,i)=>{const g=r.A.filter(x=>x.ok).length,p=pc(g,r.A.length);return `<tr><td>${i+1}</td><td>${esc(lab(r.q))}</td><td><b>${esc(ansT(r.q))}</b></td><td><span class="bdbar"><i style="width:${p}%;background:${col(p)}"></i></span> ${g} / ${r.A.length}</td></tr>`}).join("")}</table>
+    <h3 class="sdh">Élève par élève</h3>
+    ${studs.length?`<table class="stab bdtab"><tr><th>Élève</th><th>Bonnes réponses</th><th>Questions ratées</th></tr>${studs.map(s=>`<tr><td class="bdkid"><span class="av">${avSvg(s.k.avatar)}</span>${esc(s.k.name)}</td><td><b style="color:${col(pc(s.g,rows.length))}">${s.g} / ${rows.length}</b></td><td>${s.miss.length?s.miss.join(", "):"aucune 🎉"}</td></tr>`).join("")}</table>`:`<p>Personne n'a répondu.</p>`}
+    ${absent.length?`<p class="imghelp">N'ont pas joué : ${absent.map(k=>esc(k.name)).join(", ")}</p>`:""}
+    <div class="row noprint"><button class="btn" id="bdpr" style="--c:#2f8fc4">🖨 Imprimer</button><button class="btn" id="bdok" style="--c:#4f9f45">Terminer</button></div></section>`;
+  document.getElementById("back").onclick=done;document.getElementById("bdok").onclick=done;document.getElementById("bdpr").onclick=()=>window.print();
+}
 const goalTarget2=cl=>Math.max(50,+((cl.settings||{}).goal)||300);
 
 /* tuiles vivantes : rebond + petites étoiles quand on touche (tablette comme souris) */
