@@ -3002,7 +3002,7 @@ const me=()=>PROF.list.find(p=>p.id===PROF.cur);
 let saveT=null,PENDING_SAVE=false;
 const save=()=>{const p=me();if(!p)return;p.best=best;p.lvl=LVL;
   if(p.admin){LS("pompon-teacher-best",best);return}
-  LS("pompon-cache-"+p.id,{best,lvl:LVL});PENDING_SAVE=true;clearTimeout(saveT);saveT=setTimeout(pushSave,800)};
+  LS("pompon-cache-"+p.id,{best,lvl:LVL,r:CUR_R});PENDING_SAVE=true;clearTimeout(saveT);saveT=setTimeout(pushSave,800)};
 /* Sauvegarde : les étoiles sont d'abord gardées sur la tablette, puis envoyées.
    Le serveur garde toujours la meilleure note : une sauvegarde ne peut jamais effacer des étoiles. */
 async function pushSave(){if(!STU||!PENDING_SAVE)return;PENDING_SAVE=false;
@@ -3038,7 +3038,11 @@ let SET_CLASS={},SET_STU={};
 const mergeSet=(c={},s={})=>({...DEFSET,...c,...s,nq:{...NQDEF,...(c.nq||{}),...(s.nq||{})},hide:s.hide||c.hide||[]});
 const S=()=>mergeSet(SET_CLASS,SET_STU);
 const NQ=k=>Math.max(1,Math.min(NQMAX[k],S().nq[k]||NQDEF[k]));
-function useStudent(st){const cache=LS("pompon-cache-"+st.id)||{};
+let CUR_R=null;
+function useStudent(st){let cache=LS("pompon-cache-"+st.id)||{};
+  /* remise à zéro par l'enseignant : le serveur porte une marque « _r » ; si la tablette a une ancienne copie, on l'oublie */
+  const sr=st.progress&&st.progress._r;if(sr&&cache.r!==sr){cache={};LS("pompon-cache-"+st.id,null);LS("pompon-statq-"+st.id,null)}
+  CUR_R=sr||cache.r||null;st={...st,progress:{...(st.progress||{})}};delete st.progress._r;
   if(st.class_settings||st.settings){SET_CLASS=st.class_settings||{};SET_STU=st.settings||{};LS("pompon-set-"+st.id,[SET_CLASS,SET_STU])}
   else{const c=LS("pompon-set-"+st.id)||[{},{}];SET_CLASS=c[0];SET_STU=c[1]}
   const merged={...(st.progress||{})};for(const [k,v] of Object.entries(cache.best||{}))if(!(merged[k]>=v))merged[k]=v;
@@ -3296,11 +3300,15 @@ function studentDetail(cl,s){
     ${WORLDS.map((wd,wi)=>`<div class="pblock" style="--c:${wd.c};--on:${wd.on}"><h3><span class="rnum">${wd.p}</span>${svg(WART(wd.id))}${wd.name}<small class="pdone">${w.per[wi].done} / ${w.per[wi].total} jeux</small></h3>
       <div class="tscroll"><table class="stab"><tr><th></th>${GSETS[wd.id].map(k=>`<th class="${ms.hide.includes(k)?"hid":""}">${GNAME[k]}${ms.hide.includes(k)?"<br><small>(masqué)</small>":""}</th>`).join("")}</tr>
       ${LV.map(l=>`<tr><th>${l===4?"Révision":"Niveau "+l}</th>${GSETS[wd.id].map(k=>{const v=pr[wd.id+SUF[k]+"@"+l]||0;return `<td class="${ms.hide.includes(k)?"hid":""}">${v?STAR_ON.repeat(v):"–"}</td>`}).join("")}</tr>`).join("")}</table></div></div>`).join("")}
-    <div class="row"><button class="btn" id="del" style="--c:#e05a47">Supprimer l'élève</button></div><span class="err" id="de"></span></section>`;
+    <div class="row"><button class="btn" id="rz" style="--c:#e8a33a">↺ Remettre à zéro</button><button class="btn" id="del" style="--c:#e05a47">Supprimer l'élève</button></div><span class="err" id="de"></span></section>`;
   document.getElementById("back").onclick=()=>studentsScreen();
   document.getElementById("sset").onclick=()=>settingsScreen(cl,s);
   document.getElementById("srep").onclick=()=>studentReport(cl,s);
   document.getElementById("np").onclick=async()=>{const c=randPics().join("-");try{await tq("/rest/v1/rpc/teacher_set_pics",{method:"POST",body:{p_student:s.id,p_pics:c}});s.pic_code=c;studentDetail(cl,s)}catch(e){document.getElementById("de").textContent=e.message}};
+  document.getElementById("rz").onclick=async()=>{const b=document.getElementById("rz");
+    if(!b.dataset.sure){b.dataset.sure=1;b.textContent="Sûr ? Ses étoiles et ses résultats seront effacés";return}
+    b.disabled=true;try{const pr={_r:"r"+Date.now()};await tq(`/rest/v1/students?id=eq.${s.id}`,{method:"PATCH",body:{progress:pr,stats:{},lvl:1}});
+      s.progress=pr;s.stats={};s.lvl=1;studentsScreen()}catch(e){b.disabled=false;document.getElementById("de").textContent=e.message}};
   document.getElementById("del").onclick=()=>{const b=document.getElementById("del");if(b.dataset.sure){tq(`/rest/v1/students?id=eq.${s.id}`,{method:"DELETE"}).then(()=>studentsScreen()).catch(e=>document.getElementById("de").textContent=e.message)}
     else{b.dataset.sure=1;b.textContent="Sûr ? Ses étoiles seront perdues"}};
 }
